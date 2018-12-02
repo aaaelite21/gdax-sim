@@ -1,6 +1,22 @@
 const ApiSim = require('../Lib/ApiSim');
 const assert = require('assert');
 const crypto = require('crypto');
+const testCandleHighToLow = {
+    time: "Tue Nov 27 2018 12:20:00 GMT-0500 (Eastern Standard Time)",
+    open: 29.35,
+    high: 29.41,
+    low: 29.3,
+    close: 29.3,
+    volume: 58.25595405999999
+}
+const testCandleLowToHigh = {
+    time: "Tue Nov 27 2018 03:44:00 GMT-0500 (Eastern Standard Time)",
+    open: 29.15,
+    high: 29.18,
+    low: 29.14,
+    close: 29.16,
+    volume: 41.767021490000005
+}
 const buyParams = {
     price: 25.00,
     size: 0.1,
@@ -11,6 +27,13 @@ const sellParams = {
     size: 0.1,
     product_id: 'LTC-USD'
 };
+const matchTemplate = {
+    side: 'buy',
+    price: 32,
+    size: 2,
+    time: (new Date('Dec 1 2018')).toISOString(),
+    product_id: 'LTC-USD'
+};
 describe('#ApiSim', () => {
     describe('#init', () => {
         it('has an array of user limit orders', () => {
@@ -19,6 +42,80 @@ describe('#ApiSim', () => {
                 sells: [],
                 buys: []
             });
+        });
+        it('has a current price that starts at 0', () => {
+            let Gdax = new ApiSim();
+            assert.equal(Gdax.currentPrice, 0);
+        });
+    });
+
+    describe('#createMatchesFromCandle', () => {
+        it('returns a minimum of 4 matches', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+            assert.equal(matches.length, 4);
+        });
+        it('returns high before low if the close <= open', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
+            assert(parseFloat(matches[1].price) >= (parseFloat(matches[2].price)));
+        });
+        it('returns low before high if the close > open', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+            assert(parseFloat(matches[1].price) <= (parseFloat(matches[2].price)));
+        });
+        it('increases the seconds from each match by 14', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+            for (let i = 1; i < matches.length; i++) {
+                let date = new Date(matches[i].time);
+                let datePrime = new Date(matches[i - 1].time);
+                assert.equal(date.getSeconds() - datePrime.getSeconds(), 14);
+            }
+        });
+        it('changes the side to \'sell\' if the price is going down from the last match', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+        });
+        it('changes the side to \'buy\' if the price is going up from the last match', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+        });
+    });
+
+    describe('#createMatch', () => {
+        it('returns a match with the specafied paramaeters', () => {
+            let Gdax = new ApiSim();
+            let match = Gdax.createMatch(matchTemplate);
+            assert.equal(match.side, matchTemplate.side);
+            assert.equal(match.size, matchTemplate.size.toString());
+            assert.equal(match.price, matchTemplate.price.toString());
+            assert.equal(match.time, matchTemplate.time);
+            assert.equal(match.product_id, matchTemplate.product_id);
+        });
+        it('returns a that generates unspecafied parameters', () => {
+            let Gdax = new ApiSim();
+            let match = Gdax.createMatch(matchTemplate);
+            assert(match.type === 'match');
+            assert(typeof match.trade_id === 'number');
+            assert(typeof match.sequence === 'number');
+            assert(typeof match.maker_order_id === 'string');
+            assert(typeof match.taker_order_id === 'string');
+        });
+        it('returns the desired maker order id if specafied', () => {
+            let Gdax = new ApiSim();
+            let x = JSON.parse(JSON.stringify(matchTemplate))
+            x.maker_order_id = "abc123";
+            let match = Gdax.createMatch(x);
+            assert.equal(match.maker_order_id, "abc123");
+        });
+        it('returns the desired taker order id if specafied', () => {
+            let Gdax = new ApiSim();
+            let x = JSON.parse(JSON.stringify(matchTemplate))
+            x.taker_order_id = "abc123";
+            let match = Gdax.createMatch(x);
+            assert.equal(match.taker_order_id, "abc123");
         });
     });
 

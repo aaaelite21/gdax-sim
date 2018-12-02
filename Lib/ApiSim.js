@@ -37,7 +37,6 @@ class ApiSim {
         } else if (sellIndex !== -1) {
             data = this.userLimitOrders.sells.splice(sellIndex, 1)[0].id;
         }
-        console.log(data)
         if (typeof callback === 'function') {
             callback(null, null, data);
         }
@@ -92,21 +91,63 @@ class ApiSim {
 
 
     //Below are supporting functions
-    createMatch(price, volume, time) {
+    createMatchesFromCandle(candle) {
+        let matches = [];
+        let startTime = new Date(candle.time);
+
+        for (let i = 0; i < 4; i++) {
+            let key;
+            switch (i) {
+                case 0:
+                    key = 'open';
+                    break;
+                case 1:
+                    if (candle.close < candle.open) {
+                        key = 'high';
+                    } else {
+                        key = 'low';
+                    }
+                    break;
+                case 2:
+                    if (candle.close < candle.open) {
+                        key = 'low';
+                    } else {
+                        key = 'high';
+                    }
+                    break;
+                case 3:
+                    key = 'close';
+                    break;
+            }
+            matches.push(this.createMatch({
+                side: 'buy',
+                size: candle.volume / 4,
+                time: startTime.toISOString(),
+                product_id: 'LTC-USD',
+                price: candle[key]
+            }));
+
+            startTime.setSeconds(startTime.getSeconds() + 14)
+        }
 
 
-        // {
-        //     "type": "match",
-        //     "trade_id": 35233156,
-        //     "maker_order_id": "75d1da4b-a79b-43b7-bb21-b10d55d5e147",
-        //     "taker_order_id": "6cf683d9-8afe-4ce5-b80e-a2f1e84380bd",
-        //     "side": "sell",
-        //     "size": "1.43456890",
-        //     "price": "33.30000000",
-        //     "product_id": "LTC-USD",
-        //     "sequence": 3065720894,
-        //     "time": "2018-11-29T03:32:10.466000Z"
-        //   }
+        return matches;
+    }
+
+    createMatch(templateObj) {
+
+        return {
+            type: 'match',
+            side: templateObj.side,
+            size: templateObj.size.toString(),
+            price: templateObj.price.toString(),
+            time: templateObj.time,
+            product_id: templateObj.product_id,
+            trade_id: Math.round(100000000 * Math.random()),
+            sequence: Math.round(100000000 * Math.random()),
+            taker_order_id: templateObj.taker_order_id !== undefined ? templateObj.taker_order_id : crypto.createHash('sha1').update(JSON.stringify(Math.random().toString())).digest("hex"),
+            maker_order_id: templateObj.maker_order_id !== undefined ? templateObj.maker_order_id : crypto.createHash('sha1').update(JSON.stringify(Math.random().toString())).digest("hex")
+        }
     }
 }
 
