@@ -25,13 +25,21 @@ class WebsocketSim {
         }
     }
 
-    open() {}
+    open() {
+        throw new Error('unimplemented method exception');
+    }
 
-    message() {}
+    message() {
+        throw new Error('unimplemented method exception');
+    }
 
-    error() {}
+    error() {
+        throw new Error('unimplemented method exception');
+    }
 
-    close() {}
+    close() {
+        throw new Error('unimplemented method exception');
+    }
 
 }
 

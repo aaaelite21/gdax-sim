@@ -74,6 +74,14 @@ describe('#ApiSim', () => {
                 assert.equal(date.getSeconds() - datePrime.getSeconds(), 14);
             }
         });
+        it('changes the side to \'sell\' if the price is going down from the last match', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+        });
+        it('changes the side to \'buy\' if the price is going up from the last match', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+        });
     });
 
     describe('#createMatch', () => {
