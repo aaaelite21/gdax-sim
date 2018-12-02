@@ -1,22 +1,30 @@
 const ApiSim = require('../Lib/ApiSim');
+const WebsocketSim = require('../Lib/WebsocketSim');
+const UserSim = require('../Lib/UserAccountSim');
+
 const assert = require('assert');
 const crypto = require('crypto');
+//const TestDay = require('../TestData/27Nov2018LTCUSD.json');
 const testCandleHighToLow = {
-    time: "Tue Nov 27 2018 12:20:00 GMT-0500 (Eastern Standard Time)",
+    time: "Tue Nov 27 2018 03:44:00 GMT-0500 (Eastern Standard Time)",
     open: 29.35,
     high: 29.41,
-    low: 29.3,
+    low: 29.28,
     close: 29.3,
     volume: 58.25595405999999
 }
 const testCandleLowToHigh = {
-    time: "Tue Nov 27 2018 03:44:00 GMT-0500 (Eastern Standard Time)",
-    open: 29.15,
-    high: 29.18,
-    low: 29.14,
-    close: 29.16,
+    time: "Tue Nov 27 2018 03:45:00 GMT-0500 (Eastern Standard Time)",
+    open: 29.25,
+    high: 29.38,
+    low: 29.24,
+    close: 29.26,
     volume: 41.767021490000005
 }
+const twoCandleArray = [
+    testCandleHighToLow,
+    testCandleLowToHigh
+]
 const buyParams = {
     price: 25.00,
     size: 0.1,
@@ -47,6 +55,61 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             assert.equal(Gdax.currentPrice, 0);
         });
+        it('has a websocketsim', () => {
+            let Gdax = new ApiSim();
+            assert(Gdax.websocketClient instanceof WebsocketSim);
+        });
+        it('has a usersim', () => {
+            let Gdax = new ApiSim();
+            assert(Gdax.user instanceof UserSim);
+        });
+    });
+
+    describe('#backtest', () => {
+        it('disbatches all matches to the websocket in time order', () => {
+            let Gdax = new ApiSim();
+            let count = 0;
+            Gdax.websocketClient.on('message', () => {
+                count++;
+            });
+            Gdax.backtest(twoCandleArray);
+            assert.equal(count, 8);
+        });
+        it('disbatches all matches to the websocket from oldest to most recent', () => {
+            let Gdax = new ApiSim();
+            let lastTime = null;
+            Gdax.websocketClient.on('message', (data) => {
+                if (lastTime === null) {
+                    lastTime = (new Date(data.time)).getTime();
+                } else {
+                    let now = (new Date(data.time)).getTime();
+                    assert(now > lastTime);
+                    lastTime = now;
+                }
+            });
+            Gdax.backtest(twoCandleArray);
+        });
+        it('disbatches all matches to the websocket from oldest to most recent', () => {
+            let Gdax = new ApiSim();
+            let lastTime = null;
+            Gdax.websocketClient.on('message', (data) => {
+                if (lastTime === null) {
+                    lastTime = (new Date(data.time)).getTime();
+                } else {
+                    let now = (new Date(data.time)).getTime();
+                    assert(now > lastTime);
+                    lastTime = now;
+                }
+            });
+            Gdax.backtest(twoCandleArray);
+        });
+        it('sets the current price to that of the most recent match', () => {
+            let Gdax = new ApiSim();
+            Gdax.websocketClient.on('message', (data) => {
+                assert.equal(Gdax.currentPrice, parseFloat(data.price));
+            });
+            Gdax.backtest(twoCandleArray);
+        });
     });
 
     describe('#createMatchesFromCandle', () => {
@@ -76,11 +139,19 @@ describe('#ApiSim', () => {
         });
         it('changes the side to \'sell\' if the price is going down from the last match', () => {
             let Gdax = new ApiSim();
-            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+            let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
+            assert.equal(matches[2].side, 'sell');
         });
         it('changes the side to \'buy\' if the price is going up from the last match', () => {
             let Gdax = new ApiSim();
-            let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
+            let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
+            assert.equal(matches[1].side, 'buy');
+            assert.equal(matches[3].side, 'buy');
+        });
+        it('can take an array of candles and generate matches based off of them', () => {
+            let Gdax = new ApiSim();
+            let matches = Gdax.createMatchesFromCandle(twoCandleArray, 2);
+            assert.equal(matches.length, 8);
         });
     });
 

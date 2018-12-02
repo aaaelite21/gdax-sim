@@ -1,13 +1,16 @@
 const WebocketSim = require('./WebsocketSim');
+const UserSim = require('./UserAccountSim');
 const crypto = require('crypto');
 class ApiSim {
-    constructor(candles) {
+    constructor() {
         this.userLimitOrders = {
             sells: [],
             buys: []
         };
         this.currentPrice = 0;
-        //this.WebsocketClient = WebsocketSim;
+        this.websocketClient = new WebocketSim();
+        this.user = new UserSim();
+
     }
 
     buy(buyParams, callback) {
@@ -39,6 +42,15 @@ class ApiSim {
         }
         if (typeof callback === 'function') {
             callback(null, null, data);
+        }
+    }
+
+    //Below are supporting functions
+    backtest(candleData) {
+        let matches = this.createMatchesFromCandle(candleData);
+        for (let i = 0; i < matches.length; i++) {
+            this.currentPrice = parseFloat(matches[i].price);
+            this.websocketClient.disbatch('message', matches[i]);
         }
     }
 
@@ -89,45 +101,60 @@ class ApiSim {
         }
     }
 
-
-    //Below are supporting functions
-    createMatchesFromCandle(candle) {
+    createMatchesFromCandle(candlesArrayOrObj, count) {
         let matches = [];
-        let startTime = new Date(candle.time);
+        let candles = candlesArrayOrObj.length === undefined ? [candlesArrayOrObj] : candlesArrayOrObj;
+        let candleCount = count === undefined ? candles.length : count;
+        for (let c = 0; c < candleCount; c++) {
+            let candle = candles[c];
+            let startTime = new Date(candle.time);
 
-        for (let i = 0; i < 4; i++) {
-            let key;
-            switch (i) {
-                case 0:
-                    key = 'open';
-                    break;
-                case 1:
-                    if (candle.close < candle.open) {
-                        key = 'high';
-                    } else {
-                        key = 'low';
+            for (let i = 0; i < 4; i++) {
+                let key;
+                switch (i) {
+                    case 0:
+                        key = 'open';
+                        break;
+                    case 1:
+                        if (candle.close < candle.open) {
+                            key = 'high';
+                        } else {
+                            key = 'low';
+                        }
+                        break;
+                    case 2:
+                        if (candle.close < candle.open) {
+                            key = 'low';
+                        } else {
+                            key = 'high';
+                        }
+                        break;
+                    case 3:
+                        key = 'close';
+                        break;
+                }
+
+                let side = Math.random() > 0.5 ? 'buy' : 'sell';
+
+                if (matches.length > 0) {
+                    let lastPrice = parseFloat(matches[matches.length - 1].price);
+                    if (candle[key] > lastPrice) {
+                        side = 'buy';
+                    } else if (candle[key] < lastPrice) {
+                        side = 'sell'
                     }
-                    break;
-                case 2:
-                    if (candle.close < candle.open) {
-                        key = 'low';
-                    } else {
-                        key = 'high';
-                    }
-                    break;
-                case 3:
-                    key = 'close';
-                    break;
+                }
+
+                matches.push(this.createMatch({
+                    side: side,
+                    size: candle.volume / 4,
+                    time: startTime.toISOString(),
+                    product_id: 'LTC-USD',
+                    price: candle[key]
+                }));
+
+                startTime.setSeconds(startTime.getSeconds() + 14)
             }
-            matches.push(this.createMatch({
-                side: 'buy',
-                size: candle.volume / 4,
-                time: startTime.toISOString(),
-                product_id: 'LTC-USD',
-                price: candle[key]
-            }));
-
-            startTime.setSeconds(startTime.getSeconds() + 14)
         }
 
 
