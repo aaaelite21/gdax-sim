@@ -1,20 +1,38 @@
 class WebsocketSim {
     constructor() {}
 
-    onOpen() {
-
+    on(type, func) {
+        if (type === 'message') {
+            this.message = func;
+        } else if (type === 'error') {
+            this.error = func;
+        } else if (type === 'close') {
+            this.close = func;
+        } else if (type === 'open') {
+            this.open = func;
+        }
     }
 
-    onMessage(callback) {
-
+    disbatch(type, data) {
+        if (type === 'message') {
+            this.message(data);
+        } else if (type === 'error') {
+            this.error(data);
+        } else if (type === 'close') {
+            this.close(data);
+        } else if (type === 'open') {
+            this.open(data);
+        }
     }
 
-    onError(callback) {
+    open() {}
 
-    }
+    message() {}
 
-    onClose(callback) {
+    error() {}
 
-    }
+    close() {}
 
 }
+
+module.exports = WebsocketSim;
