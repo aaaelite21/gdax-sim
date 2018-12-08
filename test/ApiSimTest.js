@@ -117,11 +117,11 @@ describe('#ApiSim', () => {
                 assert.equal(done.side, data.side);
             });
         });
-        it('fill message is only done if the order\'s volume is completle satisfied', () => {
+        /*it('fill message is only done if the order\'s volume is completle satisfied', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
 
-        });
+        });*/
     });
 
     describe('#backtest', () => {
@@ -174,10 +174,55 @@ describe('#ApiSim', () => {
                 Gdax.backtest(twoCandleArray);
             });
             it('sell: disbatches a \'match\' that includes the order\'s specific details', () => {
+                let Gdax = new ApiSim();
+                let count = 0;
+                let order;
 
+                function placeOrder() {
+                    Gdax.sell({
+                        price: 29.30,
+                        size: 0.1,
+                        product_id: 'LTC-USD'
+                    }, (err, res, data) => {
+                        order = data;
+                    });
+                }
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 2) {
+                        placeOrder();
+                    }
+                    if (count === 6) {
+                        assert.equal(message.maker_order_id, order.id);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
             it('sell: disbatches a \'type = fill reason = done\' that includes the order\'s id', () => {
+                let Gdax = new ApiSim();
+                let count = 0;
+                let order;
 
+                function placeOrder() {
+                    Gdax.sell({
+                        price: 29.30,
+                        size: 0.1,
+                        product_id: 'LTC-USD'
+                    }, (err, res, data) => {
+                        order = data;
+                    });
+                }
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 2) {
+                        placeOrder();
+                    }
+                    if (count === 7) {
+                        assert.equal(message.type, 'done');
+                        assert.equal(message.order_id, order.id);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
         });
         it('disbatches all matches to the websocket in time order', () => {

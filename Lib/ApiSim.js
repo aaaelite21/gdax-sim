@@ -79,6 +79,18 @@ class ApiSim {
                     }
                 } else if (nextPrice > this.currentPrice) {
                     //sellOrderCheck
+                    let sellsToComplete = this.user.openSells.map((e) => {
+                        let orderPrice = parseFloat(e.price);
+                        return orderPrice < nextPrice && orderPrice >= this.currentPrice;
+                    });
+                    for (let s = 0; s < sellsToComplete.length; s++) {
+                        if (sellsToComplete[s]) {
+                            let newmsg = this.fillOrder(this.user.openSells[s].id, null, this.avgTime(currentTime, nextTime));
+                            for (let i = newmsg.length - 1; i >= 0; i--) {
+                                messages.push(newmsg[i])
+                            }
+                        }
+                    }
                 }
             }
         }
