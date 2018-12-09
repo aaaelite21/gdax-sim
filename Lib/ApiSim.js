@@ -124,7 +124,8 @@ class ApiSim {
                 maker_order_id: order.id,
                 size: order.size,
                 price: order.price,
-                product_id: order.product_id
+                product_id: order.product_id,
+                time: time
             }));
 
             messages.push({
