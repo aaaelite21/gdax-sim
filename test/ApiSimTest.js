@@ -372,9 +372,9 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams, (err, res, d) => {
-                assert.equal(Gdax.user.openBuys.length, 1);
+                assert.equal(Gdax.user.limitOrders.openBuys.length, 1);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
-                    assert.equal(Gdax.user.openBuys.length, 0);
+                    assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
                 });
             });
         });
@@ -382,9 +382,9 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams, (err, res, d) => {
-                assert.equal(Gdax.user.openSells.length, 1);
+                assert.equal(Gdax.user.limitOrders.openSells.length, 1);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
-                    assert.equal(Gdax.user.openSells.length, 0);
+                    assert.equal(Gdax.user.limitOrders.openSells.length, 0);
                 });
             });
         });
@@ -417,7 +417,7 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams);
-            assert.deepEqual(Gdax.user.openBuys[0], {
+            assert.deepEqual(Gdax.user.limitOrders.openBuys[0], {
                 id: crypto.createHash('sha1').update(JSON.stringify(buyParams)).digest("hex"),
                 price: buyParams.price.toString(),
                 size: buyParams.size.toString(),
@@ -488,11 +488,11 @@ describe('#ApiSim', () => {
         });
     });
     describe('#sell', () => {
-        it('saves the limit order to the userLimitOrders.sells array ', () => {
+        it('saves the limit order to the user.LimitOrders.openSells array ', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams);
-            assert.deepEqual(Gdax.user.openSells[0], {
+            assert.deepEqual(Gdax.user.limitOrders.openSells[0], {
                 id: crypto.createHash('sha1').update(JSON.stringify(sellParams)).digest("hex"),
                 price: sellParams.price.toString(),
                 size: sellParams.size.toString(),

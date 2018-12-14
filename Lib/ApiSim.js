@@ -1,6 +1,8 @@
 const WebocketSim = require('./WebsocketSim');
 const UserSim = require('./UserAccountSim');
+const orderGenerator = require('./OrderGenerator');
 const crypto = require('crypto');
+
 class ApiSim {
     constructor(fb, cb) {
         this.user = new UserSim();
@@ -15,18 +17,20 @@ class ApiSim {
         buyParams.side = "buy";
         this.createOrder(buyParams, callback);
     }
+
     sell(sellParams, callback) {
         sellParams.side = "sell";
         this.createOrder(sellParams, callback);
     }
+
     cancelOrder(orderId, callback) {
         let data;
         let order;
-        let buyIndex = this.user.openBuys.map((e) => {
+        let buyIndex = this.user.limitOrders.openBuys.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
-        let sellIndex = this.user.openSells.map((e) => {
+        let sellIndex = this.user.limitOrders.openSells.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
@@ -36,10 +40,10 @@ class ApiSim {
             };
         } else {
             if (buyIndex !== -1) {
-                order = this.user.openBuys.splice(buyIndex, 1)[0];
+                order = this.user.limitOrders.openBuys.splice(buyIndex, 1)[0];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
             } else if (sellIndex !== -1) {
-                order = this.user.openSells.splice(sellIndex, 1)[0];
+                order = this.user.limitOrders.openSells.splice(sellIndex, 1)[0];
                 this.user.cryptoBalance += parseFloat(order.size);
             }
             data = order.id;
@@ -65,13 +69,13 @@ class ApiSim {
                 nextTime = mPrime.time;
                 if (nextPrice < this.currentPrice) {
                     //buy order check
-                    let buysToComplete = this.user.openBuys.map((e) => {
+                    let buysToComplete = this.user.limitOrders.openBuys.map((e) => {
                         let orderPrice = parseFloat(e.price);
                         return orderPrice > nextPrice && orderPrice <= this.currentPrice;
                     });
                     for (let b = 0; b < buysToComplete.length; b++) {
                         if (buysToComplete[b]) {
-                            let newmsg = this.fillOrder(this.user.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
+                            let newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
                             for (let i = newmsg.length - 1; i >= 0; i--) {
                                 messages.push(newmsg[i])
                             }
@@ -79,13 +83,13 @@ class ApiSim {
                     }
                 } else if (nextPrice > this.currentPrice) {
                     //sellOrderCheck
-                    let sellsToComplete = this.user.openSells.map((e) => {
+                    let sellsToComplete = this.user.limitOrders.openSells.map((e) => {
                         let orderPrice = parseFloat(e.price);
                         return orderPrice < nextPrice && orderPrice >= this.currentPrice;
                     });
                     for (let s = 0; s < sellsToComplete.length; s++) {
                         if (sellsToComplete[s]) {
-                            let newmsg = this.fillOrder(this.user.openSells[s].id, null, this.avgTime(currentTime, nextTime));
+                            let newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
                             for (let i = newmsg.length - 1; i >= 0; i--) {
                                 messages.push(newmsg[i])
                             }
@@ -101,20 +105,20 @@ class ApiSim {
         let orderCompleted = false;
         let side;
         let messages = [];
-        let buyIndex = this.user.openBuys.map((e) => {
+        let buyIndex = this.user.limitOrders.openBuys.map((e) => {
             return e.id;
         }).indexOf(orderId);
-        let sellIndex = this.user.openSells.map((e) => {
+        let sellIndex = this.user.limitOrders.openSells.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
         if (buyIndex !== -1 || sellIndex !== -1) {
             if (buyIndex !== -1) {
-                order = this.user.openBuys.splice(buyIndex, 1)[0];
+                order = this.user.limitOrders.openBuys.splice(buyIndex, 1)[0];
                 this.user.cryptoBalance += parseFloat(order.size);
                 side = 'buy';
             } else if (sellIndex !== -1) {
-                order = this.user.openSells.splice(sellIndex, 1)[0];
+                order = this.user.limitOrders.openSells.splice(sellIndex, 1)[0];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
                 side = 'sell';
             }
@@ -144,48 +148,42 @@ class ApiSim {
         return messages;
     }
 
-    createOrder(orderParams, callback) {
+    createOrder(orderPerams, callback) {
         let data;
-        let order = {}
-        let orderPrice = parseFloat(orderParams.price);
-        let orderSize = parseFloat(orderParams.size);
+        let orderPrice = parseFloat(orderPerams.price);
+        let orderSize = parseFloat(orderPerams.size);
+        let order = {};
+        if (orderPerams.type !== 'market' &&
+            ((orderPerams.side === 'buy' && orderPrice > this.currentPrice) ||
+                (orderPerams.side === 'sell' && orderPrice < this.currentPrice) ||
+                (orderPerams.side === 'buy' && orderPrice * orderSize > this.user.fiatBalance)) ||
+            (orderPerams.side === 'sell' && orderSize > this.user.cryptoBalance)) {
 
-        if ((orderParams.side === 'buy' && orderPrice > this.currentPrice) ||
-            (orderParams.side === 'sell' && orderPrice < this.currentPrice) ||
-            (orderParams.side === 'buy' && orderPrice * orderSize > this.user.fiatBalance) ||
-            (orderParams.side === 'sell' && orderSize > this.user.cryptoBalance)) {
             data = {
                 status: 'rejected'
             }
 
         } else {
-            //user defined perams
-            order.price = orderParams.price.toString();
-            order.post_only = false;
-            order.product_id = orderParams.product_id;
-            order.size = orderParams.size.toString();
-            order.type = "limit";
-            order.stp = "dc";
-
-
-            //Gdax defined peramns
-            order.id = crypto.createHash('sha1').update(JSON.stringify(orderParams)).digest("hex");
-            order.side = orderParams.side;
-            order.time_in_force = "GTC";
-            order.filled_size = "0.00000000";
-            order.executed_value = "0.0000000000000000";
-            order.status = "pending";
-            order.settled = false;
-            order.fill_fees = "0.0000000000000000";
-            order.created_at = "2016-12-08T20:02:28.53864Z";
+            order = orderGenerator(orderPerams);
             //save order
-            if (orderParams.side === "buy") {
-                this.user.openBuys.push(order);
-                this.user.fiatBalance -= orderPrice * orderSize;
-            } else {
-                this.user.openSells.push(order);
-                this.user.cryptoBalance -= orderSize;
+            if (order.type === 'limit') {
+                if (order.side === "buy") {
+                    this.user.limitOrders.openBuys.push(order);
+                    this.user.fiatBalance -= orderPrice * orderSize;
+                } else {
+                    this.user.limitOrders.openSells.push(order);
+                    this.user.cryptoBalance -= orderSize;
+                }
+            } else if (order.type === 'market') {
+                if (order.side === "buy") {
+
+                } else {
+                    this.user.cryptoBalance -= orderSize;
+                    order.funds = this.user.cryptoBalance.toString();
+                    this.user.marketOrders.openSells.push(order);
+                }
             }
+
             //set data to order for callback
             data = order;
         }
