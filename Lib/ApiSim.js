@@ -63,7 +63,19 @@ class ApiSim {
             let mPrime = messages[messages.length - 1];
             this.currentPrice = parseFloat(m.price);
             currentTime = m.time;
-            this.websocketClient.disbatch('message', m);
+            //market sell orders
+            while (this.user.marketOrders.openSells.length > 0) {
+                let moid = this.user.marketOrders.openSells[0].id;
+                let newmsg = this.fillOrder(moid, null, currentTime);
+                for (let i = newmsg.length - 1; i >= 0; i--) {
+                    messages.push(newmsg[i])
+                }
+            }
+            //market buy orders
+            if (this.user.marketOrders.openBuys.length > 0) {
+
+            }
+            //limit orders below
             if (messages.length > 1) {
                 nextPrice = parseFloat(mPrime.price);
                 nextTime = mPrime.time;
@@ -97,28 +109,32 @@ class ApiSim {
                     }
                 }
             }
+            //disbatch the message as teh final thing
+            this.websocketClient.disbatch('message', m);
         }
     }
 
     fillOrder(orderId, size, time) {
         let order;
-        let orderCompleted = false;
         let side;
         let messages = [];
-        let buyIndex = this.user.limitOrders.openBuys.map((e) => {
+        let limitBuyIndex = this.user.limitOrders.openBuys.map((e) => {
             return e.id;
         }).indexOf(orderId);
-        let sellIndex = this.user.limitOrders.openSells.map((e) => {
+        let limitSellIndex = this.user.limitOrders.openSells.map((e) => {
+            return e.id;
+        }).indexOf(orderId);
+        let marketSellIndex = this.user.marketOrders.openSells.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
-        if (buyIndex !== -1 || sellIndex !== -1) {
-            if (buyIndex !== -1) {
-                order = this.user.limitOrders.openBuys.splice(buyIndex, 1)[0];
+        if (limitBuyIndex !== -1 || limitSellIndex !== -1) {
+            if (limitBuyIndex !== -1) {
+                order = this.user.limitOrders.openBuys.splice(limitBuyIndex, 1)[0];
                 this.user.cryptoBalance += parseFloat(order.size);
                 side = 'buy';
-            } else if (sellIndex !== -1) {
-                order = this.user.limitOrders.openSells.splice(sellIndex, 1)[0];
+            } else if (limitSellIndex !== -1) {
+                order = this.user.limitOrders.openSells.splice(limitSellIndex, 1)[0];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
                 side = 'sell';
             }
@@ -139,6 +155,28 @@ class ApiSim {
                 reason: "filled",
                 product_id: order.product_id,
                 price: order.price.toString(),
+                remaining_size: "0.00000000",
+                sequence: Math.round(100000000 * Math.random()),
+                time: time
+            });
+        } else if (marketSellIndex !== -1) {
+            order = this.user.marketOrders.openSells.splice(marketSellIndex, 1)[0];
+            this.user.fiatBalance += (parseFloat(order.size) * parseFloat(this.currentPrice)) * 0.997;
+            messages.push(this.createMatch({
+                side: side,
+                taker_order_id: order.id,
+                size: order.size,
+                price: this.currentPrice,
+                product_id: order.product_id,
+                time: time
+            }));
+            messages.push({
+                type: "done",
+                side: order.side,
+                order_id: orderId,
+                reason: "filled",
+                product_id: order.product_id,
+                price: this.price,
                 remaining_size: "0.00000000",
                 sequence: Math.round(100000000 * Math.random()),
                 time: time

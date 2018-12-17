@@ -127,10 +127,45 @@ describe('#ApiSim', () => {
     describe('#backtest', () => {
         describe('completing orders', () => {
             it('completes a buy order when the price crosses down through that price between matches', () => {
-
+                let count = 0;
+                let Gdax = new ApiSim();
+                Gdax.currentPrice = 29.40;
+                Gdax.buy({
+                    price: 29.26,
+                    size: 0.1,
+                    product_id: 'LTC-USD'
+                });
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 4) {
+                        assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
             it('completes a sell order when the price crosses up through that price between matches', () => {
+                let count = 0;
                 let Gdax = new ApiSim();
+
+                function placeOrder() {
+                    Gdax.sell({
+                        price: 29.30,
+                        size: 0.1,
+                        product_id: 'LTC-USD'
+                    });
+                }
+
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 2) {
+                        placeOrder();
+                        assert.equal(Gdax.user.limitOrders.openSells.length, 1);
+                    }
+                    if (count === 6) {
+                        assert.equal(Gdax.user.limitOrders.openSells.length, 0);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
             it('buy: disbatches a \'match\' that includes the order\'s specific details', () => {
                 let Gdax = new ApiSim();
