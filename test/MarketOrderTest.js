@@ -34,6 +34,12 @@ const twoCandleArray = [
   testCandleLowToHigh
 ];
 
+const limitSellParams = {
+  price: 29.30,
+  size: 0.1,
+  product_id: 'LTC-USD'
+};
+
 describe("#ApiSim Market Orders", () => {
   describe("#sell", () => {
     it("adds the funds value to the market order", () => {
@@ -100,6 +106,7 @@ describe("#ApiSim Market Orders", () => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
         assert.equal(ret[0].type, "match");
         assert.equal(ret[0].taker_order_id, data.id);
+        assert.equal(ret[0].side, data.side);
       });
     });
     it("returns the 'done' last", () => {
@@ -164,7 +171,36 @@ describe("#ApiSim Market Orders", () => {
       });
       Gdax.backtest(twoCandleArray);
     });
-    it("sell: market orders are completed before limit orders", () => {});
-    it("sell: market orders info is disbatched before limit order info", () => {});
+    it("sell:market order info is disbatched before limit order info", () => {
+      let Gdax = new ApiSim();
+      let count = 0;
+      let limitOrder, marketOrder;
+
+      function placeOrder() {
+        Gdax.sell(limitSellParams, (err, res, data) => {
+          limitOrder = data;
+        });
+        Gdax.sell({
+          size: 0.1,
+          product_id: 'LTC-USD',
+          type: 'market'
+        }, (err, res, data) => {
+          marketOrder = data;
+        });
+      }
+      Gdax.websocketClient.on('message', (message) => {
+        if (count === 2) {
+          placeOrder();
+        }
+        if (count === 4) {
+          assert.equal(message.taker_order_id, marketOrder.id);
+        }
+        if (count === 8) {
+          assert.equal(message.maker_order_id, limitOrder.id);
+        }
+        count++;
+      });
+      Gdax.backtest(twoCandleArray);
+    });
   });
 });

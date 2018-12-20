@@ -116,7 +116,6 @@ class ApiSim {
 
     fillOrder(orderId, size, time) {
         let order;
-        let side;
         let messages = [];
         let limitBuyIndex = this.user.limitOrders.openBuys.map((e) => {
             return e.id;
@@ -132,15 +131,13 @@ class ApiSim {
             if (limitBuyIndex !== -1) {
                 order = this.user.limitOrders.openBuys.splice(limitBuyIndex, 1)[0];
                 this.user.cryptoBalance += parseFloat(order.size);
-                side = 'buy';
             } else if (limitSellIndex !== -1) {
                 order = this.user.limitOrders.openSells.splice(limitSellIndex, 1)[0];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
-                side = 'sell';
             }
 
             messages.push(this.createMatch({
-                side: side,
+                side: order.side,
                 maker_order_id: order.id,
                 size: order.size,
                 price: order.price,
@@ -163,7 +160,7 @@ class ApiSim {
             order = this.user.marketOrders.openSells.splice(marketSellIndex, 1)[0];
             this.user.fiatBalance += (parseFloat(order.size) * parseFloat(this.currentPrice)) * 0.997;
             messages.push(this.createMatch({
-                side: side,
+                side: order.side,
                 taker_order_id: order.id,
                 size: order.size,
                 price: this.currentPrice,
