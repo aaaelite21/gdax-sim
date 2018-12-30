@@ -7,9 +7,21 @@ const marketSellPerams = {
   type: "market"
 };
 
+const marketBuyPerams = {
+  product_id: "LTC-USD",
+  size: 50,
+  type: "market"
+};
+
 const badMarketSellPerams = {
   product_id: "LTC-USD",
   size: 101,
+  type: "market"
+};
+
+const badMarketBuyPerams = {
+  product_id: "LTC-USD",
+  size: 500,
   type: "market"
 };
 
@@ -78,7 +90,40 @@ describe("#ApiSim Market Orders", () => {
     });
   });
   describe("#buy", () => {
-    //repeat sell
+    it("adds the funds value to the market order", () => {
+      let Gdax = new ApiSim();
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        assert.equal(data.funds, Gdax.user.fiatBalance.toString());
+      });
+    });
+    it("saves the market order to the user.marketOrders.openBuys array", () => {
+      let Gdax = new ApiSim();
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        assert.equal(Gdax.user.marketOrders.openBuys[0].id, data.id);
+      });
+    });
+    it("runs the callback after", done => {
+      let Gdax = new ApiSim();
+      Gdax.sell(marketBuyPerams, done);
+    });
+    it("returns the order in the 'data' attribute of the callback", () => {
+      let Gdax = new ApiSim();
+      Gdax.buy(marketSellPerams, (err, res, data) => {
+        assert.equal(Gdax.user.marketOrders.openBuys[0], data);
+      });
+    });
+    it("rejects the order if the user lacks the fiat", () => {
+      let Gdax = new ApiSim();
+      Gdax.sell(badMarketBuyPerams, (err, res, data) => {
+        assert.equal(data.status, "rejected");
+      });
+    });
+    it("deducts the value of the order (size) from the fiat balance", () => {
+      let Gdax = new ApiSim();
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        assert.equal(Gdax.user.fiatBalance, 50);
+      });
+    });
   });
 
   describe("#fillOrder", () => {
@@ -96,10 +141,31 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(Gdax.user.fiatBalance, target);
       });
     });
-    it("returns an array of messages to disbatch", () => {
-      //assert(false);
+
+    it("adds the (size/price) of a market buy order to the crypto account", () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 35;
+      let target =
+        Gdax.user.cryptoBalance +
+        marketBuyPerams.size / Gdax.currentPrice
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        Gdax.fillOrder(data.id, data.size, time);
+        assert.equal(Gdax.user.cryptoBalance, target);
+      });
     });
-    it("returns the match first", () => {
+
+    it("subtracts the fee from the fiat account for a market buy", () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 35;
+      let target =
+        (Gdax.user.fiatBalance - marketBuyPerams.size) - marketBuyPerams.size * 0.003
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        Gdax.fillOrder(data.id, data.size, time);
+        assert.equal(Gdax.user.fiatBalance, target);
+      });
+    });
+
+    it("sell: returns the match first", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       Gdax.sell(marketSellPerams, (err, res, data) => {
@@ -109,7 +175,17 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(ret[0].side, data.side);
       });
     });
-    it("returns the 'done' last", () => {
+    it("buy: returns the match first", () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 35;
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        let ret = Gdax.fillOrder(data.id, data.size, time);
+        assert.equal(ret[0].type, "match");
+        assert.equal(ret[0].taker_order_id, data.id);
+        assert.equal(ret[0].side, data.side);
+      });
+    });
+    it("sell: returns the 'done' last", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       Gdax.sell(marketSellPerams, (err, res, data) => {
@@ -117,13 +193,31 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(ret[ret.length - 1].type, "done");
       });
     });
-    it("the returned 'done' has the proper data", () => {
+    it("buy: returns the 'done' last", () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 35;
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        let ret = Gdax.fillOrder(data.id, data.size, time);
+        assert.equal(ret[ret.length - 1].type, "done");
+      });
+    });
+    it("sell: the returned 'done' has the proper data", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       Gdax.sell(marketSellPerams, (err, res, data) => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
         let done = ret[ret.length - 1];
         assert.equal(done.side, "sell");
+        assert(done.order_id, data.id);
+      });
+    });
+    it("buy: the returned 'done' has the proper data", () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 35;
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        let ret = Gdax.fillOrder(data.id, data.size, time);
+        let done = ret[ret.length - 1];
+        assert.equal(done.side, "buy");
         assert(done.order_id, data.id);
       });
     });
@@ -203,4 +297,5 @@ describe("#ApiSim Market Orders", () => {
       Gdax.backtest(twoCandleArray);
     });
   });
+
 });

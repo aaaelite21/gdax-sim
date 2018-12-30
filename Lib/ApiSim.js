@@ -72,8 +72,12 @@ class ApiSim {
                 }
             }
             //market buy orders
-            if (this.user.marketOrders.openBuys.length > 0) {
-
+            while (this.user.marketOrders.openBuys.length > 0) {
+                let moid = this.user.marketOrders.openBuys[0].id;
+                let newmsg = this.fillOrder(moid, null, currentTime);
+                for (let i = newmsg.length - 1; i >= 0; i--) {
+                    messages.push(newmsg[i])
+                }
             }
             //limit orders below
             if (messages.length > 1) {
@@ -124,6 +128,9 @@ class ApiSim {
             return e.id;
         }).indexOf(orderId);
         let marketSellIndex = this.user.marketOrders.openSells.map((e) => {
+            return e.id;
+        }).indexOf(orderId);
+        let marketBuyIndex = this.user.marketOrders.openBuys.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
@@ -178,6 +185,30 @@ class ApiSim {
                 sequence: Math.round(100000000 * Math.random()),
                 time: time
             });
+        } else if (marketBuyIndex !== -1) {
+            order = this.user.marketOrders.openBuys.splice(marketBuyIndex, 1)[0];
+            this.user.cryptoBalance += parseFloat(order.size) / parseFloat(this.currentPrice);
+            this.user.fiatBalance -= parseFloat(order.size) * 0.003;
+
+            messages.push(this.createMatch({
+                side: order.side,
+                taker_order_id: order.id,
+                size: order.size,
+                price: this.currentPrice,
+                product_id: order.product_id,
+                time: time
+            }));
+            messages.push({
+                type: "done",
+                side: order.side,
+                order_id: orderId,
+                reason: "filled",
+                product_id: order.product_id,
+                price: this.price,
+                remaining_size: "0.00000000",
+                sequence: Math.round(100000000 * Math.random()),
+                time: time
+            });
         }
 
         return messages;
@@ -211,7 +242,9 @@ class ApiSim {
                 }
             } else if (order.type === 'market') {
                 if (order.side === "buy") {
-
+                    this.user.fiatBalance -= orderSize;
+                    order.funds = this.user.fiatBalance.toString();
+                    this.user.marketOrders.openBuys.push(order);
                 } else {
                     this.user.cryptoBalance -= orderSize;
                     order.funds = this.user.cryptoBalance.toString();
