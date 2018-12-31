@@ -127,10 +127,45 @@ describe('#ApiSim', () => {
     describe('#backtest', () => {
         describe('completing orders', () => {
             it('completes a buy order when the price crosses down through that price between matches', () => {
-
+                let count = 0;
+                let Gdax = new ApiSim();
+                Gdax.currentPrice = 29.40;
+                Gdax.buy({
+                    price: 29.26,
+                    size: 0.1,
+                    product_id: 'LTC-USD'
+                });
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 4) {
+                        assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
             it('completes a sell order when the price crosses up through that price between matches', () => {
+                let count = 0;
                 let Gdax = new ApiSim();
+
+                function placeOrder() {
+                    Gdax.sell({
+                        price: 29.30,
+                        size: 0.1,
+                        product_id: 'LTC-USD'
+                    });
+                }
+
+                Gdax.websocketClient.on('message', (message) => {
+                    if (count === 2) {
+                        placeOrder();
+                        assert.equal(Gdax.user.limitOrders.openSells.length, 1);
+                    }
+                    if (count === 6) {
+                        assert.equal(Gdax.user.limitOrders.openSells.length, 0);
+                    }
+                    count++;
+                });
+                Gdax.backtest(twoCandleArray);
             });
             it('buy: disbatches a \'match\' that includes the order\'s specific details', () => {
                 let Gdax = new ApiSim();
@@ -372,9 +407,9 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams, (err, res, d) => {
-                assert.equal(Gdax.user.openBuys.length, 1);
+                assert.equal(Gdax.user.limitOrders.openBuys.length, 1);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
-                    assert.equal(Gdax.user.openBuys.length, 0);
+                    assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
                 });
             });
         });
@@ -382,9 +417,9 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams, (err, res, d) => {
-                assert.equal(Gdax.user.openSells.length, 1);
+                assert.equal(Gdax.user.limitOrders.openSells.length, 1);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
-                    assert.equal(Gdax.user.openSells.length, 0);
+                    assert.equal(Gdax.user.limitOrders.openSells.length, 0);
                 });
             });
         });
@@ -417,7 +452,7 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams);
-            assert.deepEqual(Gdax.user.openBuys[0], {
+            assert.deepEqual(Gdax.user.limitOrders.openBuys[0], {
                 id: crypto.createHash('sha1').update(JSON.stringify(buyParams)).digest("hex"),
                 price: buyParams.price.toString(),
                 size: buyParams.size.toString(),
@@ -488,11 +523,11 @@ describe('#ApiSim', () => {
         });
     });
     describe('#sell', () => {
-        it('saves the limit order to the userLimitOrders.sells array ', () => {
+        it('saves the limit order to the user.LimitOrders.openSells array ', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams);
-            assert.deepEqual(Gdax.user.openSells[0], {
+            assert.deepEqual(Gdax.user.limitOrders.openSells[0], {
                 id: crypto.createHash('sha1').update(JSON.stringify(sellParams)).digest("hex"),
                 price: sellParams.price.toString(),
                 size: sellParams.size.toString(),
