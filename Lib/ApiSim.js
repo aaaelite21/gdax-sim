@@ -177,7 +177,7 @@ class ApiSim {
             messages.push({
                 type: "done",
                 side: order.side,
-                order_id: orderId,
+                order_id: order.id,
                 reason: "filled",
                 product_id: order.product_id,
                 price: this.price,
@@ -201,7 +201,7 @@ class ApiSim {
             messages.push({
                 type: "done",
                 side: order.side,
-                order_id: orderId,
+                order_id: order.id,
                 reason: "filled",
                 product_id: order.product_id,
                 price: this.price,
