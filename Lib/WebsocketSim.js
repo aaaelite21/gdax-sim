@@ -30,7 +30,7 @@ class WebsocketSim {
     }
 
     message() {
-        throw new Error('unimplemented method exception');
+        //throw new Error('unimplemented method exception');
     }
 
     error() {

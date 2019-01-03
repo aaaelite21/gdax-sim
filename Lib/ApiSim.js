@@ -2,6 +2,7 @@ const WebocketSim = require('./WebsocketSim');
 const UserSim = require('./UserAccountSim');
 const orderGenerator = require('./OrderGenerator');
 const crypto = require('crypto');
+const HistoricRates = require('./HistoricRates');
 
 class ApiSim {
     constructor(fb, cb) {
@@ -10,7 +11,27 @@ class ApiSim {
         this.user.fiatBalance = isNaN(fb) ? 100 : fb;
         this.websocketClient = new WebocketSim();
         this.currentPrice = 0;
+        this.historics = {
+            m1: [],
+            m5: [],
+            m15: [],
+            h1: [],
+            h6: [],
+            d1: []
+        }
 
+    }
+
+    getProductHistoricRates(product, params, callback) {
+        HistoricRates.getProduct.call(this, product, params, callback)
+    }
+
+    logHistoricData(message) {
+        HistoricRates.processMatch.call(this, message);
+    }
+
+    handleMatch(match) {
+        HistoricRates.handleMatch.call(this, match);
     }
 
     buy(buyParams, callback) {
@@ -113,7 +134,8 @@ class ApiSim {
                     }
                 }
             }
-            //disbatch the message as teh final thing
+            //disbatch the message as the final thing
+            this.logHistoricData(m);
             this.websocketClient.disbatch('message', m);
         }
     }
