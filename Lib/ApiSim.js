@@ -138,6 +138,9 @@ class ApiSim {
             this.logHistoricData(m);
             this.websocketClient.disbatch('message', m);
         }
+        if (typeof this.afterSession === 'function') {
+            this.afterSession();
+        }
     }
 
     fillOrder(orderId, size, time) {

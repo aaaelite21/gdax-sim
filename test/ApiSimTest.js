@@ -125,6 +125,11 @@ describe('#ApiSim', () => {
     });
 
     describe('#backtest', () => {
+        it("runs the afterSessionFunction", (done) => {
+            let Gdax = new ApiSim();
+            Gdax.afterSession = done;
+            Gdax.backtest(twoCandleArray);
+        });
         describe('completing orders', () => {
             it('completes a buy order when the price crosses down through that price between matches', () => {
                 let count = 0;
