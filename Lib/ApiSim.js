@@ -3,6 +3,7 @@ const UserSim = require('./UserAccountSim');
 const orderGenerator = require('./OrderGenerator');
 const crypto = require('crypto');
 const HistoricRates = require('./HistoricRates');
+const Heartbeat = require('./Heartbeat');
 
 class ApiSim {
     constructor(fb, cb) {
@@ -20,6 +21,10 @@ class ApiSim {
             d1: []
         }
 
+    }
+
+    createHeartbeat(pair, time) {
+        return Heartbeat.create.call(this, pair, time);
     }
 
     getProductHistoricRates(product, params, callback) {
@@ -288,6 +293,7 @@ class ApiSim {
     }
 
     createMatchesFromCandle(candlesArrayOrObj, count) {
+        //handle hearbeat hear
         let matches = [];
         let candles = candlesArrayOrObj.length === undefined ? [candlesArrayOrObj] : candlesArrayOrObj;
         let candleCount = count === undefined ? candles.length : count;
