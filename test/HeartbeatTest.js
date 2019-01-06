@@ -23,8 +23,8 @@ describe('#Heartbeats', () => {
         let count = 0,
             tested = false;
         Gdax.websocketClient.on('message', (message) => {
-            if (count === 5) {
-                // assert.equal(message.type, 'heartbeat');
+            if (count === 4) {
+                assert.equal(message.type, 'heartbeat');
                 tested = true;
             }
             count++;

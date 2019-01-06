@@ -12,6 +12,7 @@ class ApiSim {
         this.user.fiatBalance = isNaN(fb) ? 100 : fb;
         this.websocketClient = new WebocketSim();
         this.currentPrice = 0;
+        this.pair='ETH-BTC';
         this.historics = {
             m1: [],
             m5: [],
@@ -22,6 +23,7 @@ class ApiSim {
         }
 
     }
+    afterSession(){}
 
     createHeartbeat(pair, time) {
         return Heartbeat.create.call(this, pair, time);
@@ -293,13 +295,22 @@ class ApiSim {
     }
 
     createMatchesFromCandle(candlesArrayOrObj, count) {
-        //handle hearbeat hear
-        let matches = [];
+        let messages = [];
         let candles = candlesArrayOrObj.length === undefined ? [candlesArrayOrObj] : candlesArrayOrObj;
         let candleCount = count === undefined ? candles.length : count;
+        let lastTime = null;
         for (let c = 0; c < candleCount; c++) {
             let candle = candles[c];
             let startTime = new Date(candle.time);
+
+            if(lastTime !== null){
+                while(lastTime + 60000 < startTime.getTime()){
+                    lastTime+=60000;
+                    messages.push(this.createHeartbeat(this.pair, lastTime))
+                }
+            }
+
+            lastTime = startTime.getTime();
 
             for (let i = 0; i < 4; i++) {
                 let key;
@@ -326,10 +337,11 @@ class ApiSim {
                         break;
                 }
 
+                //ToDo: base side off of the direction of price movemnet
                 let side = Math.random() > 0.5 ? 'buy' : 'sell';
 
-                if (matches.length > 0) {
-                    let lastPrice = parseFloat(matches[matches.length - 1].price);
+                if (messages.length > 0) {
+                    let lastPrice = parseFloat(messages[messages.length - 1].price);
                     if (candle[key] > lastPrice) {
                         side = 'buy';
                     } else if (candle[key] < lastPrice) {
@@ -337,11 +349,11 @@ class ApiSim {
                     }
                 }
 
-                matches.push(this.createMatch({
+                messages.push(this.createMatch({
                     side: side,
                     size: candle.volume / 4,
                     time: startTime.toISOString(),
-                    product_id: 'LTC-USD',
+                    product_id: this.product_id,
                     price: candle[key]
                 }));
 
@@ -350,7 +362,7 @@ class ApiSim {
         }
 
 
-        return matches;
+        return messages;
     }
 
     createMatch(templateObj) {
