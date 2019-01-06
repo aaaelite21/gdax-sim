@@ -88,7 +88,6 @@ class ApiSim {
         let nextPrice, currentTime, nextTime;
         while (messages.length > 0) {
             let m = messages.pop();
-            let mPrime = messages[messages.length - 1];
             this.currentPrice = parseFloat(m.price);
             currentTime = m.time;
             //market sell orders
@@ -108,7 +107,14 @@ class ApiSim {
                 }
             }
             //limit orders below
-            if (messages.length > 1) {
+            if (messages.length > 1 && m.type === 'match') {
+                let newmsg = [];
+                let primeIndex = messages.length - 1;
+                let mPrime = messages[primeIndex];
+                while(mPrime.type !== 'match' && primeIndex > 0){
+                    primeIndex--;
+                    mPrime = messages[primeIndex];
+                }
                 nextPrice = parseFloat(mPrime.price);
                 nextTime = mPrime.time;
                 if (nextPrice < this.currentPrice) {
@@ -119,10 +125,7 @@ class ApiSim {
                     });
                     for (let b = 0; b < buysToComplete.length; b++) {
                         if (buysToComplete[b]) {
-                            let newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
-                            for (let i = newmsg.length - 1; i >= 0; i--) {
-                                messages.push(newmsg[i])
-                            }
+                            newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
                         }
                     }
                 } else if (nextPrice > this.currentPrice) {
@@ -133,12 +136,13 @@ class ApiSim {
                     });
                     for (let s = 0; s < sellsToComplete.length; s++) {
                         if (sellsToComplete[s]) {
-                            let newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
-                            for (let i = newmsg.length - 1; i >= 0; i--) {
-                                messages.push(newmsg[i])
-                            }
+                            newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
                         }
                     }
+                }
+
+                for (let i = newmsg.length - 1; i >= 0; i--) {
+                    messages.push(newmsg[i])
                 }
             }
             //disbatch the message as the final thing

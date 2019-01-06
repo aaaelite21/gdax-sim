@@ -32,4 +32,31 @@ describe('#Heartbeats', () => {
         Gdax.backtest(TestData.testCandlesMissingMinute);
         assert(tested);
     });
+    describe("#Behavior of limit buy and sells are the same", () => {
+        it('completes a buy order when the price crosses down through that price between matches', () => {
+            let count = 0;
+            let Gdax = new ApiSim();
+            let order;
+            Gdax.currentPrice = 29.40;
+            Gdax.buy({
+                price: 29.26,
+                size: 0.1,
+                product_id: 'LTC-USD'
+            }, (err,res,data)=>{
+                order=data;
+            });
+            Gdax.websocketClient.on('message', (message) => {
+                if (count === 4) {
+                    assert.equal(message.type, 'heartbeat');
+                }
+                if (count === 5) {
+                    assert.equal(message.maker_order_id, order.id);
+                    assert.equal(message.type, 'match');
+
+                }
+                count++;
+            });
+            Gdax.backtest(TestData.testCandlesMissingMinute);
+        });
+    });
 });
