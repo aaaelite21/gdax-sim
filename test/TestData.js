@@ -1,4 +1,19 @@
 module.exports = {
+    testCandlesMissingMinute: [{
+        time: "Tue Nov 27 2018 03:44:00 GMT-0500 (Eastern Standard Time)",
+        open: 29.35,
+        high: 29.41,
+        low: 29.28,
+        close: 29.30,
+        volume: 58.25595405999999
+    }, {
+        time: "Tue Nov 27 2018 03:46:00 GMT-0500 (Eastern Standard Time)",
+        open: 29.20,
+        high: 29.28,
+        low: 29.13,
+        close: 29.16,
+        volume: 41.767021490000005
+    }],
     testCandleHighToLow: {
         time: "Tue Nov 27 2018 03:44:00 GMT-0500 (Eastern Standard Time)",
         open: 29.35,
