@@ -12,7 +12,7 @@ class ApiSim {
         this.user.fiatBalance = isNaN(fb) ? 100 : fb;
         this.websocketClient = new WebocketSim();
         this.currentPrice = 0;
-        this.pair='ETH-BTC';
+        this.pair = 'ETH-BTC';
         this.historics = {
             m1: [],
             m5: [],
@@ -23,7 +23,7 @@ class ApiSim {
         }
 
     }
-    afterSession(){}
+    afterSession() {}
 
     createHeartbeat(pair, time) {
         return Heartbeat.create.call(this, pair, time);
@@ -88,7 +88,9 @@ class ApiSim {
         let nextPrice, currentTime, nextTime;
         while (messages.length > 0) {
             let m = messages.pop();
-            this.currentPrice = parseFloat(m.price);
+            if (m.price !== undefined) {
+                this.currentPrice = parseFloat(m.price);
+            }
             currentTime = m.time;
             //market sell orders
             while (this.user.marketOrders.openSells.length > 0) {
@@ -107,43 +109,42 @@ class ApiSim {
                 }
             }
             //limit orders below
-            if (messages.length > 1 && m.type === 'match') {
+            if (messages.length > 1) {
                 let newmsg = [];
                 let primeIndex = messages.length - 1;
                 let mPrime = messages[primeIndex];
-                while(mPrime.type !== 'match' && primeIndex > 0){
-                    primeIndex--;
-                    mPrime = messages[primeIndex];
-                }
-                nextPrice = parseFloat(mPrime.price);
-                nextTime = mPrime.time;
-                if (nextPrice < this.currentPrice) {
-                    //buy order check
-                    let buysToComplete = this.user.limitOrders.openBuys.map((e) => {
-                        let orderPrice = parseFloat(e.price);
-                        return orderPrice > nextPrice && orderPrice <= this.currentPrice;
-                    });
-                    for (let b = 0; b < buysToComplete.length; b++) {
-                        if (buysToComplete[b]) {
-                            newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
+                if (mPrime.type === 'match') {
+                    nextPrice = parseFloat(mPrime.price);
+                    nextTime = mPrime.time;
+                    if (nextPrice < this.currentPrice) {
+                        //buy order check
+                        let buysToComplete = this.user.limitOrders.openBuys.map((e) => {
+                            let orderPrice = parseFloat(e.price);
+                            return orderPrice > nextPrice && orderPrice <= this.currentPrice;
+                        });
+                        for (let b = 0; b < buysToComplete.length; b++) {
+                            if (buysToComplete[b]) {
+                                newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
+                            }
+                        }
+                    } else if (nextPrice > this.currentPrice) {
+                        //sellOrderCheck
+                        let sellsToComplete = this.user.limitOrders.openSells.map((e) => {
+                            let orderPrice = parseFloat(e.price);
+                            return orderPrice < nextPrice && orderPrice >= this.currentPrice;
+                        });
+                        for (let s = 0; s < sellsToComplete.length; s++) {
+                            if (sellsToComplete[s]) {
+                                newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
+                            }
                         }
                     }
-                } else if (nextPrice > this.currentPrice) {
-                    //sellOrderCheck
-                    let sellsToComplete = this.user.limitOrders.openSells.map((e) => {
-                        let orderPrice = parseFloat(e.price);
-                        return orderPrice < nextPrice && orderPrice >= this.currentPrice;
-                    });
-                    for (let s = 0; s < sellsToComplete.length; s++) {
-                        if (sellsToComplete[s]) {
-                            newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
-                        }
+
+                    for (let i = newmsg.length - 1; i >= 0; i--) {
+                        messages.push(newmsg[i])
                     }
                 }
 
-                for (let i = newmsg.length - 1; i >= 0; i--) {
-                    messages.push(newmsg[i])
-                }
             }
             //disbatch the message as the final thing
             this.logHistoricData(m);
@@ -307,9 +308,9 @@ class ApiSim {
             let candle = candles[c];
             let startTime = new Date(candle.time);
 
-            if(lastTime !== null){
-                while(lastTime + 60000 < startTime.getTime()){
-                    lastTime+=60000;
+            if (lastTime !== null) {
+                while (lastTime + 60000 < startTime.getTime()) {
+                    lastTime += 60000;
                     messages.push(this.createHeartbeat(this.pair, lastTime))
                 }
             }

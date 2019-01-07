@@ -42,8 +42,8 @@ describe('#Heartbeats', () => {
                 price: 29.26,
                 size: 0.1,
                 product_id: 'LTC-USD'
-            }, (err,res,data)=>{
-                order=data;
+            }, (err, res, data) => {
+                order = data;
             });
             Gdax.websocketClient.on('message', (message) => {
                 if (count === 4) {
@@ -54,6 +54,7 @@ describe('#Heartbeats', () => {
                     assert.equal(message.type, 'match');
 
                 }
+                console.log(count, message.type, Gdax.currentPrice)
                 count++;
             });
             Gdax.backtest(TestData.testCandlesMissingMinute);
