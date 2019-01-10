@@ -72,25 +72,26 @@ module.exports = {
         }
     },
     getProduct: function (product, params, callback) {
-        let data;
+        let section = [],
+            data = [];
         switch (params.granularity) {
             case 60:
-                data = this.historics.m1.reverse();
+                section = this.historics.m1.reverse();
                 break;
             case 300:
-                data = this.historics.m5.reverse();
+                section = this.historics.m5.reverse();
                 break;
             case 900:
-                data = this.historics.m15.reverse();
+                section = this.historics.m15.reverse();
                 break;
             case 3600:
-                data = this.historics.h1.reverse();
+                section = this.historics.h1.reverse();
                 break;
             case 21600:
-                data = this.historics.h6.reverse();
+                section = this.historics.h6.reverse();
                 break;
             case 86400:
-                data = this.historics.d1.reverse();
+                section = this.historics.d1.reverse();
                 break;
             default:
                 data = {
@@ -98,6 +99,15 @@ module.exports = {
                 };
                 break;
         }
+        for (let i = 0; i < section.length; i++) {
+            if (section[i] instanceof Candle) {
+                data.push(section[i].toArray());
+            } else {
+                data.push(section[i]);
+            }
+
+        }
+
         if (typeof callback === 'function') {
             callback(null, null, data);
         }
