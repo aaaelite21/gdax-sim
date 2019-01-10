@@ -87,6 +87,45 @@ describe('#Historic Rates', () => {
                 assert.deepEqual(data, TestData.twoHistoricRates)
             });
         });
+        // describe("#Data formating is correct", () => {
+        //     let Gdax = new ApiSim();
+        //     Gdax.backtest(TestData.oneHourBacktestData);
+        //     it('returns an array of arrays', () => {
+        //         Gdax.getProductHistoricRates('ETH-BTC', {
+        //             granularity: 60
+        //         }, (err, res, data) => {
+        //             assert.equal(data[0][0] - data[1][0], 60);
+        //         });
+        //     });
+        // });
+        describe('#0 index is most recent', () => {
+            let Gdax = new ApiSim();
+            Gdax.backtest(TestData.oneHourBacktestData);
+            it('returns the minutes with a time 60 apart', () => {
+                Gdax.getProductHistoricRates('ETH-BTC', {
+                    granularity: 60
+                }, (err, res, data) => {
+                    console.log(data)
+                    assert.equal(data[0][0] - data[1][0], 60);
+                });
+            });
+            it('returns the 5 minutes with a time 300 apart', () => {
+                Gdax.getProductHistoricRates('ETH-BTC', {
+                    granularity: 300
+                }, (err, res, data) => {
+                    console.log(data)
+                    assert.equal(data[0][0] - data[1][0], 300);
+                });
+            });
+            it('returns the 15 minutes with a time 900 apart', () => {
+                Gdax.getProductHistoricRates('ETH-BTC', {
+                    granularity: 900
+                }, (err, res, data) => {
+                    console.log(data)
+                    assert.equal(data[0][0] - data[1][0], 900);
+                });
+            });
+        });
     });
     describe('#Recording Data', () => {
         it("collects all of the data for the specific time from 1m-1d", () => {
