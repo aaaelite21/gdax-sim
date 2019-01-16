@@ -87,17 +87,24 @@ describe('#Historic Rates', () => {
                 assert.deepEqual(data, TestData.twoHistoricRates)
             });
         });
-        // describe("#Data formating is correct", () => {
-        //     let Gdax = new ApiSim();
-        //     Gdax.backtest(TestData.oneHourBacktestData);
-        //     it('returns an array of arrays', () => {
-        //         Gdax.getProductHistoricRates('ETH-BTC', {
-        //             granularity: 60
-        //         }, (err, res, data) => {
-        //             assert.equal(data[0][0] - data[1][0], 60);
-        //         });
-        //     });
-        // });
+        describe("#Data formating is correct", () => {
+            let Gdax = new ApiSim();
+            Gdax.backtest(TestData.oneHourBacktestData);
+            let target = TestData.oneHourBacktestData.length - 1;
+            it('returns an array of arrays', () => {
+                Gdax.getProductHistoricRates('ETH-BTC', {
+                    granularity: 60
+                }, (err, res, data) => {
+                    assert.equal(data[0][0] - data[1][0], 60);
+                    assert.equal(data[0].length, 6);
+                    assert.equal(data[target][1], TestData.oneHourBacktestData[0].low);
+                    assert.equal(data[target][2], TestData.oneHourBacktestData[0].high);
+                    assert.equal(data[target][3], TestData.oneHourBacktestData[0].open);
+                    assert.equal(data[target][4], TestData.oneHourBacktestData[0].close);
+                    assert.equal(data[target][5], TestData.oneHourBacktestData[0].volume);
+                });
+            });
+        });
         describe('#0 index is most recent', () => {
             let Gdax = new ApiSim();
             Gdax.backtest(TestData.oneHourBacktestData);
@@ -105,7 +112,6 @@ describe('#Historic Rates', () => {
                 Gdax.getProductHistoricRates('ETH-BTC', {
                     granularity: 60
                 }, (err, res, data) => {
-                    console.log(data)
                     assert.equal(data[0][0] - data[1][0], 60);
                 });
             });
@@ -113,7 +119,6 @@ describe('#Historic Rates', () => {
                 Gdax.getProductHistoricRates('ETH-BTC', {
                     granularity: 300
                 }, (err, res, data) => {
-                    console.log(data)
                     assert.equal(data[0][0] - data[1][0], 300);
                 });
             });
@@ -121,7 +126,6 @@ describe('#Historic Rates', () => {
                 Gdax.getProductHistoricRates('ETH-BTC', {
                     granularity: 900
                 }, (err, res, data) => {
-                    console.log(data)
                     assert.equal(data[0][0] - data[1][0], 900);
                 });
             });

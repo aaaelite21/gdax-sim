@@ -9,7 +9,7 @@ const marketSellPerams = {
 
 const marketBuyPerams = {
   product_id: "LTC-USD",
-  size: 50,
+  size: 2,
   type: "market"
 };
 
@@ -119,15 +119,17 @@ describe("#ApiSim Market Orders", () => {
       });
     });
     it("rejects the order if the user lacks the fiat", () => {
-      let Gdax = new ApiSim();
-      Gdax.sell(badMarketBuyPerams, (err, res, data) => {
+      let Gdax = new ApiSim(100, 100);
+      Gdax.currentPrice = 35;
+      Gdax.buy(badMarketBuyPerams, (err, res, data) => {
         assert.equal(data.status, "rejected");
       });
     });
     it("deducts the value of the order (size) from the fiat balance", () => {
       let Gdax = new ApiSim();
+      let baseBalance = Gdax.user.fiatBalance;
       Gdax.buy(marketBuyPerams, (err, res, data) => {
-        assert.equal(Gdax.user.fiatBalance, 50);
+        assert.equal(Gdax.user.fiatBalance, baseBalance - marketBuyPerams.size);
       });
     });
   });
@@ -137,7 +139,7 @@ describe("#ApiSim Market Orders", () => {
 
     it("adds the (size * price) - fee of a market sell order to the fiat account", () => {
       let Gdax = new ApiSim();
-      Gdax.currentPrice = 35;
+      Gdax.currentPrice = 2;
       let target =
         Gdax.user.fiatBalance +
         marketSellPerams.size * Gdax.currentPrice -

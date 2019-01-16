@@ -54,7 +54,6 @@ describe('#Heartbeats', () => {
                     assert.equal(message.type, 'match');
 
                 }
-                console.log(count, message.type, Gdax.currentPrice)
                 count++;
             });
             Gdax.backtest(TestData.testCandlesMissingMinute);
