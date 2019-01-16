@@ -258,9 +258,9 @@ class ApiSim {
         let order = {};
         if (orderPerams.type !== 'market' &&
             ((orderPerams.side === 'buy' && orderPrice > this.currentPrice) ||
-                (orderPerams.side === 'sell' && orderPrice < this.currentPrice) ||
-                (orderPerams.side === 'buy' && orderPrice * orderSize > this.user.fiatBalance)) ||
-            (orderPerams.side === 'sell' && orderSize > this.user.cryptoBalance)) {
+                (orderPerams.side === 'sell' && orderPrice < this.currentPrice)) ||
+            (orderPerams.side === 'sell' && orderSize > this.user.cryptoBalance) ||
+            (orderPerams.side === 'buy' && this.currentPrice * orderSize > this.user.fiatBalance)) {
 
             data = {
                 status: 'rejected'
