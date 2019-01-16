@@ -1,0 +1,25 @@
+{
+  "name": "gdax-sim",
+  "version": "1.0.2",
+  "description": "Simulator used to help unit test and back test various Coinbase-Pro (gdax) interactions.",
+  "main": "gdax-sim.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aaaelite21/gdax-sim.git"
+  },
+  "keywords": [
+    "gdax"
+  ],
+  "author": "aaaelite21",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/aaaelite21/gdax-sim/issues"
+  },
+  "homepage": "https://github.com/aaaelite21/gdax-sim#readme"
+}
