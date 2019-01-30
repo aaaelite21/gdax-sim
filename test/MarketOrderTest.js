@@ -88,7 +88,7 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(data.status, "rejected");
       });
     });
-    it("deducts the value of the order (size * price) from the crypto balance", () => {
+    it("deducts the value of the order (size) from the crypto balance", () => {
       let Gdax = new ApiSim();
       Gdax.sell(marketSellPerams, (err, res, data) => {
         assert.equal(Gdax.user.cryptoBalance, 99);
@@ -129,7 +129,7 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       let baseBalance = Gdax.user.fiatBalance;
       Gdax.buy(marketBuyPerams, (err, res, data) => {
-        assert.equal(Gdax.user.fiatBalance, baseBalance - marketBuyPerams.size);
+        assert.equal(Gdax.user.fiatBalance, baseBalance - marketBuyPerams.size * Gdax.currentPrice);
       });
     });
   });
@@ -151,11 +151,11 @@ describe("#ApiSim Market Orders", () => {
     });
 
     it("adds the (size/price) of a market buy order to the crypto account", () => {
-      let Gdax = new ApiSim();
+      let Gdax = new ApiSim(1000, 0);
       Gdax.currentPrice = 35;
       let target =
         Gdax.user.cryptoBalance +
-        marketBuyPerams.size / Gdax.currentPrice
+        marketBuyPerams.size
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
         assert.equal(Gdax.user.cryptoBalance, target);
@@ -166,10 +166,10 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       let target =
-        (Gdax.user.fiatBalance - marketBuyPerams.size) - marketBuyPerams.size * 0.003
+        Gdax.user.fiatBalance - ((marketBuyPerams.size * Gdax.currentPrice) * 1.003)
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(Gdax.user.fiatBalance, target);
+        assert.equal(Gdax.user.fiatBalance.toFixed(2), target.toFixed(2));
       });
     });
 
