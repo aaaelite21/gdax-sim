@@ -224,9 +224,8 @@ class ApiSim {
             });
         } else if (marketBuyIndex !== -1) {
             order = this.user.marketOrders.openBuys.splice(marketBuyIndex, 1)[0];
-            this.user.cryptoBalance += parseFloat(order.size) / parseFloat(this.currentPrice);
-            this.user.fiatBalance -= parseFloat(order.size) * 0.003;
-
+            this.user.cryptoBalance += parseFloat(order.size);
+            this.user.fiatBalance -= parseFloat(order.size) * this.currentPrice * 1.003;
             messages.push(this.createMatch({
                 side: order.side,
                 taker_order_id: order.id,
@@ -252,22 +251,21 @@ class ApiSim {
     }
 
     createOrder(orderPerams, callback) {
-        let data;
+        let data = {
+            status: 'rejected'
+        };
         let orderPrice = parseFloat(orderPerams.price);
         let orderSize = parseFloat(orderPerams.size);
-        let order = {};
-        if (orderPerams.type !== 'market' &&
-            ((orderPerams.side === 'buy' && orderPrice > this.currentPrice) ||
-                (orderPerams.side === 'sell' && orderPrice < this.currentPrice)) ||
-            (orderPerams.side === 'sell' && orderSize > this.user.cryptoBalance) ||
-            (orderPerams.side === 'buy' && this.currentPrice * orderSize > this.user.fiatBalance)) {
+        let orderFunds = parseFloat(orderPerams.funds);
+        let order = orderGenerator(orderPerams);
+        if (!(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) >= this.currentPrice) &&
+            !(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) * parseFloat(order.size) > this.user.fiatBalance) &&
+            !(order.type === 'limit' && order.side === 'sell' && parseFloat(order.price) <= this.currentPrice) &&
+            !(order.type === 'market' && order.side === 'buy' && this.currentPrice * parseFloat(order.size) * 1.003 > this.user.fiatBalance) &&
+            !(order.type === 'market' && order.side === 'buy' && orderFunds > this.user.fiatBalance) &&
+            !(order.side === 'sell' && parseFloat(order.size) > this.user.cryptoBalance) &&
+            !(order.side === 'buy' && parseFloat(order.funds) > this.user.fiatBalance)) {
 
-            data = {
-                status: 'rejected'
-            }
-
-        } else {
-            order = orderGenerator(orderPerams);
             //save order
             if (order.type === 'limit') {
                 if (order.side === "buy") {
@@ -279,7 +277,9 @@ class ApiSim {
                 }
             } else if (order.type === 'market') {
                 if (order.side === "buy") {
-                    this.user.fiatBalance -= orderSize;
+                    if (!isNaN(orderFunds)) {
+                        order.size = (orderFunds * 0.997 / this.currentPrice).toString()
+                    }
                     order.funds = this.user.fiatBalance.toString();
                     this.user.marketOrders.openBuys.push(order);
                 } else {

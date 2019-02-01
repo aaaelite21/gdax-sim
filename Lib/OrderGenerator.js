@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 
-module.exports = function (orderPerams) {
+module.exports = function (orderPerams, price) {
     let order = {};
     order.id = crypto.createHash('sha1').update(JSON.stringify(orderPerams)).digest("hex");
     order.type = orderPerams.type === undefined ? "limit" : orderPerams.type;
@@ -14,7 +14,7 @@ module.exports = function (orderPerams) {
     }
 
     if (orderPerams.size !== undefined) {
-        order.size = orderPerams.size.toString()
+        order.size = orderPerams.size.toString();
     }
 
     //always constant

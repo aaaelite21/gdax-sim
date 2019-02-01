@@ -579,7 +579,7 @@ describe('#ApiSim', () => {
             });
         });
         it('rejects the order if the price is above the current price', () => {
-            let Gdax = new ApiSim();
+            let Gdax = new ApiSim(1000, 1000);
             Gdax.currentPrice = 40;
             Gdax.sell(sellParams, (err, res, data) => {
                 assert.equal(data.status, "rejected");
