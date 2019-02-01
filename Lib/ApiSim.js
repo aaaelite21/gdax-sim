@@ -279,7 +279,6 @@ class ApiSim {
                 if (order.side === "buy") {
                     if (!isNaN(orderFunds)) {
                         order.size = (orderFunds * 0.997 / this.currentPrice).toString()
-                        console.log(order.size)
                     }
                     order.funds = this.user.fiatBalance.toString();
                     this.user.marketOrders.openBuys.push(order);

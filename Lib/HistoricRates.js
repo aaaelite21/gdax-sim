@@ -59,7 +59,8 @@ module.exports = {
                             break;
                     }
                     if (this.historics[key].length === 0 ||
-                        !this.historics[key][this.historics[key].length - 1].sameBucket(message.time)) {
+                        !this.historics[key][this.historics[key].length - 1]
+                        .sameBucket(message.time)) {
                         this.historics[key].push(new Candle(message.time, g));
                         if (this.historics[key].length > 300) {
                             this.historics[key].shift()
@@ -76,22 +77,22 @@ module.exports = {
             data = [];
         switch (params.granularity) {
             case 60:
-                section = this.historics.m1.reverse();
+                section = this.historics.m1.slice().reverse();
                 break;
             case 300:
-                section = this.historics.m5.reverse();
+                section = this.historics.m5.slice().reverse();
                 break;
             case 900:
-                section = this.historics.m15.reverse();
+                section = this.historics.m15.slice().reverse();
                 break;
             case 3600:
-                section = this.historics.h1.reverse();
+                section = this.historics.h1.slice().reverse();
                 break;
             case 21600:
-                section = this.historics.h6.reverse();
+                section = this.historics.h6.slice().reverse();
                 break;
             case 86400:
-                section = this.historics.d1.reverse();
+                section = this.historics.d1.slice().reverse();
                 break;
             default:
                 data = {
