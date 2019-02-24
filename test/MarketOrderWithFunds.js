@@ -7,6 +7,12 @@ const marketBuyPerams = {
     type: 'market'
 };
 
+const marketSellPerams = {
+    product_id: 'LTC-USD',
+    funds: 200,
+    type: 'market'
+};
+
 describe("#ApiSim Market Orders With Funds", () => {
     describe("#buy", () => {
         it("rejects the order if the user lacks the fiat based on order funds", () => {
@@ -18,6 +24,15 @@ describe("#ApiSim Market Orders With Funds", () => {
         });
     });
 
+    describe("#sell", () => {
+        it("rejects the order if the user lacks the crypto based on order funds", () => {
+            let Gdax = new ApiSim(0, 2);
+            Gdax.currentPrice = 35;
+            Gdax.sell(marketSellPerams, (err, res, data) => {
+                assert.equal(data.status, "rejected");
+            });
+        });
+    });
 
     describe("#fillOrder", () => {
         let time = "2018-12-06T01:46:01.162000Z";
@@ -39,6 +54,26 @@ describe("#ApiSim Market Orders With Funds", () => {
             Gdax.buy(marketBuyPerams, (err, res, data) => {
                 Gdax.fillOrder(data.id, data.size, time);
                 assert.equal(Gdax.user.cryptoBalance, target);
+            });
+        });
+        it("deducts the value of the order (funds) from the crypto balance", () => {
+            let Gdax = new ApiSim(0, 10);
+            Gdax.currentPrice = 35
+            let targetBalance = Gdax.user.cryptoBalance - (marketBuyPerams.funds / Gdax.currentPrice);
+            Gdax.sell(marketSellPerams, (err, res, data) => {
+                Gdax.fillOrder(data.id, data.size, time);
+                assert.equal(Gdax.user.cryptoBalance.toFixed(2), targetBalance.toFixed(2));
+            });
+        });
+        it("adds the (funds - fee) of a order to the fiat account", () => {
+            let Gdax = new ApiSim(0, 10);
+            Gdax.currentPrice = 35;
+            let target =
+                Gdax.user.fiatBalance +
+                marketSellPerams.funds * 0.997;
+            Gdax.sell(marketBuyPerams, (err, res, data) => {
+                Gdax.fillOrder(data.id, data.size, time);
+                assert.equal(Gdax.user.fiatBalance, target);
             });
         });
     });

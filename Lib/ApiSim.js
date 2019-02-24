@@ -263,6 +263,7 @@ class ApiSim {
             !(order.type === 'limit' && order.side === 'sell' && parseFloat(order.price) <= this.currentPrice) &&
             !(order.type === 'market' && order.side === 'buy' && this.currentPrice * parseFloat(order.size) * 1.003 > this.user.fiatBalance) &&
             !(order.type === 'market' && order.side === 'buy' && orderFunds > this.user.fiatBalance) &&
+            !(order.type === 'market' && order.side === 'sell' && orderFunds > this.user.cryptoBalance * this.currentPrice) &&
             !(order.side === 'sell' && parseFloat(order.size) > this.user.cryptoBalance) &&
             !(order.side === 'buy' && parseFloat(order.funds) > this.user.fiatBalance)) {
 
@@ -283,6 +284,10 @@ class ApiSim {
                     order.funds = this.user.fiatBalance.toString();
                     this.user.marketOrders.openBuys.push(order);
                 } else {
+                    if (!isNaN(orderFunds)) {
+                        orderSize = (orderFunds / this.currentPrice)
+                        order.size = orderSize.toString();
+                    }
                     this.user.cryptoBalance -= orderSize;
                     order.funds = this.user.cryptoBalance.toString();
                     this.user.marketOrders.openSells.push(order);
