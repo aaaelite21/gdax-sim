@@ -244,7 +244,7 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       Gdax.buy(marketBuyPerams);
       Gdax.websocketClient.on('message', (message) => {
-        assert.equal(Gdax.user.marketOrders.openBuys.length, 0)
+        assert.equal(Gdax.user.marketOrders.openBuys.map(x => x.status).indexOf('pending'), -1);
       });
       Gdax.backtest(twoCandleArray);
     });

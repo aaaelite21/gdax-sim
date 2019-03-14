@@ -4,6 +4,7 @@ const orderGenerator = require('./OrderGenerator');
 const crypto = require('crypto');
 const HistoricRates = require('./HistoricRates');
 const Heartbeat = require('./Heartbeat');
+const GetOrder = require('./Getorder')
 
 class ApiSim {
     constructor(fb, cb) {
@@ -27,6 +28,10 @@ class ApiSim {
 
     createHeartbeat(pair, time) {
         return Heartbeat.create.call(this, pair, time);
+    }
+
+    getOrder(orderId, callback) {
+        GetOrder.call(this, orderId, callback)
     }
 
     getProductHistoricRates(product, params, callback) {
@@ -101,13 +106,22 @@ class ApiSim {
                 }
             }
             //market buy orders
-            while (this.user.marketOrders.openBuys.length > 0) {
-                let moid = this.user.marketOrders.openBuys[0].id;
-                let newmsg = this.fillOrder(moid, null, currentTime);
-                for (let i = newmsg.length - 1; i >= 0; i--) {
-                    messages.push(newmsg[i])
+            if (this.user.marketOrders.openBuys.length >= 1) {
+                let subArray = [];
+                this.user.marketOrders.openBuys.forEach((o) => {
+                    if (o.status === 'pending') {
+                        subArray.push(o.id);
+                    }
+                });
+                for (let i = 0; i < subArray.length; i++) {
+                    let moid = subArray[i];
+                    let newmsg = this.fillOrder(moid, null, currentTime);
+                    for (let i = newmsg.length - 1; i >= 0; i--) {
+                        messages.push(newmsg[i])
+                    }
                 }
             }
+
             //limit orders below
             if (messages.length > 1) {
                 let newmsg = [];
@@ -223,9 +237,10 @@ class ApiSim {
                 time: time
             });
         } else if (marketBuyIndex !== -1) {
-            order = this.user.marketOrders.openBuys.splice(marketBuyIndex, 1)[0];
+            order = this.user.marketOrders.openBuys[marketBuyIndex];
             this.user.cryptoBalance += parseFloat(order.size);
             this.user.fiatBalance -= parseFloat(order.size) * this.currentPrice * 1.003;
+            this.user.marketOrders.openBuys[marketBuyIndex].status = 'filled';
             messages.push(this.createMatch({
                 side: order.side,
                 taker_order_id: order.id,
@@ -246,7 +261,6 @@ class ApiSim {
                 time: time
             });
         }
-
         return messages;
     }
 
