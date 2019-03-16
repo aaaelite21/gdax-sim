@@ -1,12 +1,18 @@
 module.exports = function (orderId, callback) {
     let data = [];
 
-
-    let marketBuyIndex = this.user.marketOrders.openBuys.map((e) => {
+    let limitBuyIndex = this.user.limitOrders.openBuys.map((e) => {
         return e.id;
     }).indexOf(orderId);
 
-    data = this.user.marketOrders.openBuys[marketBuyIndex];
+    data = this.user.limitOrders.openBuys[limitBuyIndex];
 
+    if (limitBuyIndex === -1) {
+        let marketOrderIndex = this.user.orders.map((e) => {
+            return e.id;
+        }).indexOf(orderId);
+
+        data = this.user.orders[marketOrderIndex];
+    }
     callback(null, null, data);
 }

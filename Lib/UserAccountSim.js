@@ -14,6 +14,9 @@ class UserAccountSim {
             openSells: [],
             openBuys: []
         }
+        this.orders = [];
+        this.marketOrders.openBuys = this.orders;
+        this.marketOrders.openSells = this.orders;
     }
 
 }

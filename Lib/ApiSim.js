@@ -97,18 +97,10 @@ class ApiSim {
                 this.currentPrice = parseFloat(m.price);
             }
             currentTime = m.time;
-            //market sell orders
-            while (this.user.marketOrders.openSells.length > 0) {
-                let moid = this.user.marketOrders.openSells[0].id;
-                let newmsg = this.fillOrder(moid, null, currentTime);
-                for (let i = newmsg.length - 1; i >= 0; i--) {
-                    messages.push(newmsg[i])
-                }
-            }
-            //market buy orders
-            if (this.user.marketOrders.openBuys.length >= 1) {
+            //market orders
+            if (this.user.orders.length >= 1) {
                 let subArray = [];
-                this.user.marketOrders.openBuys.forEach((o) => {
+                this.user.orders.forEach((o) => {
                     if (o.status === 'pending') {
                         subArray.push(o.id);
                     }
@@ -178,10 +170,7 @@ class ApiSim {
         let limitSellIndex = this.user.limitOrders.openSells.map((e) => {
             return e.id;
         }).indexOf(orderId);
-        let marketSellIndex = this.user.marketOrders.openSells.map((e) => {
-            return e.id;
-        }).indexOf(orderId);
-        let marketBuyIndex = this.user.marketOrders.openBuys.map((e) => {
+        let orderIndex = this.user.orders.map((e) => {
             return e.id;
         }).indexOf(orderId);
 
@@ -214,33 +203,15 @@ class ApiSim {
                 sequence: Math.round(100000000 * Math.random()),
                 time: time
             });
-        } else if (marketSellIndex !== -1) {
-            order = this.user.marketOrders.openSells.splice(marketSellIndex, 1)[0];
-            this.user.fiatBalance += (parseFloat(order.size) * parseFloat(this.currentPrice)) * 0.997;
-            messages.push(this.createMatch({
-                side: order.side,
-                taker_order_id: order.id,
-                size: order.size,
-                price: this.currentPrice,
-                product_id: order.product_id,
-                time: time
-            }));
-            messages.push({
-                type: "done",
-                side: order.side,
-                order_id: order.id,
-                reason: "filled",
-                product_id: order.product_id,
-                price: this.price,
-                remaining_size: "0.00000000",
-                sequence: Math.round(100000000 * Math.random()),
-                time: time
-            });
-        } else if (marketBuyIndex !== -1) {
-            order = this.user.marketOrders.openBuys[marketBuyIndex];
-            this.user.cryptoBalance += parseFloat(order.size);
-            this.user.fiatBalance -= parseFloat(order.size) * this.currentPrice * 1.003;
-            this.user.marketOrders.openBuys[marketBuyIndex].status = 'filled';
+        } else if (orderIndex !== -1) {
+            order = this.user.orders[orderIndex];
+            if (order.side === 'buy') {
+                this.user.cryptoBalance += parseFloat(order.size);
+                this.user.fiatBalance -= parseFloat(order.size) * this.currentPrice * 1.003;
+            } else if (order.side === 'sell') {
+                this.user.fiatBalance += parseFloat(order.size) * this.currentPrice * 0.997;
+            }
+            this.user.orders[orderIndex].status = 'filled';
             messages.push(this.createMatch({
                 side: order.side,
                 taker_order_id: order.id,
@@ -296,7 +267,7 @@ class ApiSim {
                         order.size = (orderFunds * 0.997 / this.currentPrice).toString()
                     }
                     order.funds = this.user.fiatBalance.toString();
-                    this.user.marketOrders.openBuys.push(order);
+                    this.user.orders.push(order);
                 } else {
                     if (!isNaN(orderFunds)) {
                         orderSize = (orderFunds / this.currentPrice)
@@ -304,7 +275,7 @@ class ApiSim {
                     }
                     this.user.cryptoBalance -= orderSize;
                     order.funds = this.user.cryptoBalance.toString();
-                    this.user.marketOrders.openSells.push(order);
+                    this.user.orders.push(order);
                 }
             }
 

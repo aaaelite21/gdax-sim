@@ -142,9 +142,9 @@ describe("#ApiSim Market Orders", () => {
       Gdax.currentPrice = 2;
       let target =
         Gdax.user.fiatBalance +
-        marketSellPerams.size * Gdax.currentPrice -
-        marketSellPerams.size * Gdax.currentPrice * 0.003;
+        marketSellPerams.size * Gdax.currentPrice * 0.997;
       Gdax.sell(marketSellPerams, (err, res, data) => {
+        console.log(data)
         Gdax.fillOrder(data.id, data.size, time);
         assert.equal(Gdax.user.fiatBalance, target);
       });
@@ -236,7 +236,7 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       Gdax.sell(marketSellPerams);
       Gdax.websocketClient.on('message', (message) => {
-        assert.equal(Gdax.user.marketOrders.openSells.length, 0)
+        assert.equal(Gdax.user.orders.map(x => x.status).indexOf('pending'), -1);
       });
       Gdax.backtest(twoCandleArray);
     });
@@ -244,7 +244,7 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       Gdax.buy(marketBuyPerams);
       Gdax.websocketClient.on('message', (message) => {
-        assert.equal(Gdax.user.marketOrders.openBuys.map(x => x.status).indexOf('pending'), -1);
+        assert.equal(Gdax.user.orders.map(x => x.status).indexOf('pending'), -1);
       });
       Gdax.backtest(twoCandleArray);
     });
