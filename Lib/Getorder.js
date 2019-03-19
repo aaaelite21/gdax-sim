@@ -5,9 +5,15 @@ module.exports = function (orderId, callback) {
         return e.id;
     }).indexOf(orderId);
 
-    data = this.user.limitOrders.openBuys[limitBuyIndex];
+    let limitSellIndex = this.user.limitOrders.openSells.map((e) => {
+        return e.id;
+    }).indexOf(orderId);
 
-    if (limitBuyIndex === -1) {
+    if (limitBuyIndex !== -1) {
+        data = this.user.limitOrders.openBuys[limitBuyIndex];
+    } else if (limitSellIndex !== -1) {
+        data = this.user.limitOrders.openSells[limitSellIndex];
+    } else {
         let marketOrderIndex = this.user.orders.map((e) => {
             return e.id;
         }).indexOf(orderId);

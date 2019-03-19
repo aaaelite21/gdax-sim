@@ -124,26 +124,21 @@ class ApiSim {
                     nextTime = mPrime.time;
                     if (nextPrice < this.currentPrice) {
                         //buy order check
-                        let buysToComplete = this.user.limitOrders.openBuys.map((e) => {
-                            let orderPrice = parseFloat(e.price);
-                            return orderPrice > nextPrice && orderPrice <= this.currentPrice;
-                        });
-                        for (let b = 0; b < buysToComplete.length; b++) {
-                            if (buysToComplete[b]) {
-                                newmsg = this.fillOrder(this.user.limitOrders.openBuys[b].id, null, this.avgTime(currentTime, nextTime));
+                        this.user.limitOrders.openBuys.forEach((value, index) => {
+                            let orderPrice = parseFloat(value.price);
+                            if (value.status === 'pending' && orderPrice > nextPrice && orderPrice <= this.currentPrice) {
+                                newmsg = this.fillOrder(this.user.limitOrders.openBuys[index].id, null, this.avgTime(currentTime, nextTime));
                             }
-                        }
+                        });
+
                     } else if (nextPrice > this.currentPrice) {
                         //sellOrderCheck
-                        let sellsToComplete = this.user.limitOrders.openSells.map((e) => {
-                            let orderPrice = parseFloat(e.price);
-                            return orderPrice < nextPrice && orderPrice >= this.currentPrice;
-                        });
-                        for (let s = 0; s < sellsToComplete.length; s++) {
-                            if (sellsToComplete[s]) {
-                                newmsg = this.fillOrder(this.user.limitOrders.openSells[s].id, null, this.avgTime(currentTime, nextTime));
+                        this.user.limitOrders.openSells.forEach((value, index) => {
+                            let orderPrice = parseFloat(value.price);
+                            if (value.status === 'pending' && orderPrice < nextPrice && orderPrice >= this.currentPrice) {
+                                newmsg = this.fillOrder(this.user.limitOrders.openSells[index].id, null, this.avgTime(currentTime, nextTime));
                             }
-                        }
+                        });
                     }
 
                     for (let i = newmsg.length - 1; i >= 0; i--) {
@@ -176,11 +171,13 @@ class ApiSim {
 
         if (limitBuyIndex !== -1 || limitSellIndex !== -1) {
             if (limitBuyIndex !== -1) {
-                order = this.user.limitOrders.openBuys.splice(limitBuyIndex, 1)[0];
+                order = this.user.limitOrders.openBuys[limitBuyIndex];
                 this.user.cryptoBalance += parseFloat(order.size);
+                this.user.limitOrders.openBuys[limitBuyIndex].status = 'filled';
             } else if (limitSellIndex !== -1) {
-                order = this.user.limitOrders.openSells.splice(limitSellIndex, 1)[0];
+                order = this.user.limitOrders.openSells[limitSellIndex];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
+                this.user.limitOrders.openSells[limitSellIndex].status = 'filled';
             }
 
             messages.push(this.createMatch({

@@ -10,7 +10,7 @@ const marketPerams = {
 const limitPerams = {
     product_id: 'LTC-USD',
     size: 3,
-    price: 29
+    price: 29.00
 };
 
 describe("#ApiSim getOrder", () => {
@@ -22,9 +22,30 @@ describe("#ApiSim getOrder", () => {
             Gdax.getOrder(firstData.orderId, done);
         });
     });
-    describe("limit buy Orders", () => {
+    describe("limit sell Orders", () => {
         it("get the order based on id before it is filled", () => {
             let Gdax = new ApiSim();
+            Gdax.currentPrice = 28;
+            Gdax.sell(limitPerams, (err, res, firstData) => {
+                Gdax.getOrder(firstData.id, (err, res, data) => {
+                    assert.deepEqual(data, firstData)
+                });
+            });
+        });
+        it("get the order based on id after it is filled", () => {
+            let Gdax = new ApiSim();
+            Gdax.currentPrice = 28;
+            Gdax.sell(limitPerams, (err, res, firstData) => {
+                Gdax.fillOrder(firstData.id, firstData.size, time);
+                Gdax.getOrder(firstData.id, (err, res, data) => {
+                    assert.deepEqual(data, firstData)
+                });
+            });
+        });
+    });
+    describe("limit buy Orders", () => {
+        it("get the order based on id before it is filled", () => {
+            let Gdax = new ApiSim(500);
             Gdax.currentPrice = 30;
             Gdax.buy(limitPerams, (err, res, firstData) => {
                 Gdax.getOrder(firstData.id, (err, res, data) => {
@@ -35,7 +56,7 @@ describe("#ApiSim getOrder", () => {
         it("get the order based on id after it is filled", () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 30;
-            Gdax.sell(limitPerams, (err, res, firstData) => {
+            Gdax.buy(limitPerams, (err, res, firstData) => {
                 Gdax.fillOrder(firstData.id, firstData.size, time);
                 Gdax.getOrder(firstData.id, (err, res, data) => {
                     assert.deepEqual(data, firstData)
