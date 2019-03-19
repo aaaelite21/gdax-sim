@@ -142,7 +142,7 @@ describe('#ApiSim', () => {
                 });
                 Gdax.websocketClient.on('message', (message) => {
                     if (count === 4) {
-                        assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
+                        assert.equal(Gdax.user.limitOrders.openBuys.map(x => x.status).indexOf('pending'), -1);
                     }
                     count++;
                 });
@@ -163,10 +163,10 @@ describe('#ApiSim', () => {
                 Gdax.websocketClient.on('message', (message) => {
                     if (count === 2) {
                         placeOrder();
-                        assert.equal(Gdax.user.limitOrders.openSells.length, 1);
+                        assert.equal(Gdax.user.limitOrders.openSells.map(x => x.status).indexOf('pending'), 0);
                     }
                     if (count === 6) {
-                        assert.equal(Gdax.user.limitOrders.openSells.length, 0);
+                        assert.equal(Gdax.user.limitOrders.openSells.map(x => x.status).indexOf('pending'), -1);
                     }
                     count++;
                 });
@@ -412,7 +412,7 @@ describe('#ApiSim', () => {
             let Gdax = new ApiSim();
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams, (err, res, d) => {
-                assert.equal(Gdax.user.limitOrders.openBuys.length, 1);
+                assert.equal(Gdax.user.limitOrders.openBuys.map(x => x.status).indexOf('pending'), 0);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
                     assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
                 });
@@ -424,7 +424,7 @@ describe('#ApiSim', () => {
             Gdax.sell(sellParams, (err, res, d) => {
                 assert.equal(Gdax.user.limitOrders.openSells.length, 1);
                 Gdax.cancelOrder(d.id, (err, res, data) => {
-                    assert.equal(Gdax.user.limitOrders.openSells.length, 0);
+                    assert.equal(Gdax.user.limitOrders.openSells.map(x => x.status).indexOf('pending'), -1);
                 });
             });
         });
