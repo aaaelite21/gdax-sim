@@ -455,10 +455,13 @@ describe('#ApiSim', () => {
     describe('#buy', () => {
         it('saves the limit order to the userLimitOrders.buys array ', () => {
             let Gdax = new ApiSim();
+            Gdax.generateSalt = () => {
+                return "x";
+            }
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams);
             assert.deepEqual(Gdax.user.limitOrders.openBuys[0], {
-                id: crypto.createHash('sha1').update(JSON.stringify(buyParams)).digest("hex"),
+                id: crypto.createHash('sha1').update(JSON.stringify(buyParams) + "x").digest("hex"),
                 price: buyParams.price.toString(),
                 size: buyParams.size.toString(),
                 product_id: buyParams.product_id,
@@ -482,10 +485,13 @@ describe('#ApiSim', () => {
         });
         it('returns the order in the \'data\' attribute of the callback', () => {
             let Gdax = new ApiSim();
+            Gdax.generateSalt = () => {
+                return "x";
+            }
             Gdax.currentPrice = 35;
             Gdax.buy(buyParams, function (err, res, data) {
                 assert.deepEqual(data, {
-                    id: crypto.createHash('sha1').update(JSON.stringify(buyParams)).digest("hex"),
+                    id: crypto.createHash('sha1').update(JSON.stringify(buyParams) + "x").digest("hex"),
                     price: buyParams.price.toString(),
                     size: buyParams.size.toString(),
                     product_id: buyParams.product_id,
@@ -530,10 +536,13 @@ describe('#ApiSim', () => {
     describe('#sell', () => {
         it('saves the limit order to the user.LimitOrders.openSells array ', () => {
             let Gdax = new ApiSim();
+            Gdax.generateSalt = () => {
+                return "x";
+            }
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams);
             assert.deepEqual(Gdax.user.limitOrders.openSells[0], {
-                id: crypto.createHash('sha1').update(JSON.stringify(sellParams)).digest("hex"),
+                id: crypto.createHash('sha1').update(JSON.stringify(sellParams) + "x").digest("hex"),
                 price: sellParams.price.toString(),
                 size: sellParams.size.toString(),
                 product_id: sellParams.product_id,
@@ -557,10 +566,13 @@ describe('#ApiSim', () => {
         });
         it('returns the order in the \'data\' attribute of the callback', () => {
             let Gdax = new ApiSim();
+            Gdax.generateSalt = () => {
+                return "x";
+            }
             Gdax.currentPrice = 35;
             Gdax.sell(sellParams, function (err, res, data) {
                 assert.deepEqual(data, {
-                    id: crypto.createHash('sha1').update(JSON.stringify(sellParams)).digest("hex"),
+                    id: crypto.createHash('sha1').update(JSON.stringify(sellParams) + "x").digest("hex"),
                     price: sellParams.price.toString(),
                     size: sellParams.size.toString(),
                     product_id: sellParams.product_id,
