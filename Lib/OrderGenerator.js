@@ -1,9 +1,13 @@
 const crypto = require('crypto');
 
 
-module.exports = function (orderPerams, price) {
+module.exports = function (orderPerams, salt) {
     let order = {};
-    order.id = crypto.createHash('sha1').update(JSON.stringify(orderPerams)).digest("hex");
+    let str = JSON.stringify(orderPerams);
+    if (salt !== undefined) {
+        str += salt;
+    }
+    order.id = crypto.createHash('sha1').update(str).digest("hex");
     order.type = orderPerams.type === undefined ? "limit" : orderPerams.type;
     order.product_id = orderPerams.product_id;
     order.post_only = orderPerams.post_only === undefined ? false : orderPerams.post_only;
