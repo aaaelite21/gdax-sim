@@ -26,7 +26,9 @@ class ApiSim {
         }
 
     }
+  
     afterSession() {}
+
 
     generateSalt() {
         return (new Date()).getTime().toString();
@@ -35,7 +37,6 @@ class ApiSim {
     completeOrder(order) {
         CompleteOrder.call(this, order);
     }
-
     createHeartbeat(pair, time) {
         return Heartbeat.create.call(this, pair, time);
     }
@@ -260,6 +261,7 @@ class ApiSim {
         let orderPrice = parseFloat(orderPerams.price);
         let orderSize = parseFloat(orderPerams.size);
         let orderFunds = parseFloat(orderPerams.funds);
+      
         let order = this.generateOrder(orderPerams, this.generateSalt());
         if (!(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) >= this.currentPrice) &&
             !(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) * parseFloat(order.size) > this.user.fiatBalance) &&
