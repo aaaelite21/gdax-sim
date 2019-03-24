@@ -23,9 +23,29 @@ const marketSellParams = {
     type: 'market'
 };
 
+const marKetBuyParamsWithFunds = {
+    funds: 200,
+    product_id: 'LTC-USD',
+    side: 'buy',
+    type: 'market'
+}
+
+class testSim {
+    constructor() {
+        this.currentTime = (new Date()).toISOString();
+        this.user = {
+            cryptoBalance: 2
+        }
+    }
+    make(p, s) {
+        return orderGenerator.call(this, p, s);
+    }
+}
+let og = new testSim();
+
 describe("#OrderGenerator", () => {
     it('properly fills out limit buy orders', () => {
-        let o = orderGenerator(buyParams);
+        let o = og.make(buyParams);
         assert.deepEqual(o, {
             id: crypto.createHash('sha1').update(JSON.stringify(buyParams)).digest("hex"),
             price: buyParams.price.toString(),
@@ -36,7 +56,7 @@ describe("#OrderGenerator", () => {
             type: "limit",
             time_in_force: "GTC",
             post_only: false,
-            created_at: "2016-12-08T20:02:28.53864Z",
+            created_at: og.currentTime,
             fill_fees: "0.0000000000000000",
             filled_size: "0.00000000",
             executed_value: "0.0000000000000000",
@@ -46,7 +66,7 @@ describe("#OrderGenerator", () => {
     });
 
     it('properly fills out limit sell orders', () => {
-        let o = orderGenerator(sellParams);
+        let o = og.make(sellParams);
         assert.deepEqual(o, {
             id: crypto.createHash('sha1').update(JSON.stringify(sellParams)).digest("hex"),
             price: sellParams.price.toString(),
@@ -57,7 +77,7 @@ describe("#OrderGenerator", () => {
             type: "limit",
             time_in_force: "GTC",
             post_only: false,
-            created_at: "2016-12-08T20:02:28.53864Z",
+            created_at: og.currentTime,
             fill_fees: "0.0000000000000000",
             filled_size: "0.00000000",
             executed_value: "0.0000000000000000",
@@ -67,7 +87,7 @@ describe("#OrderGenerator", () => {
     });
 
     it('properly fills out market sell orders', () => {
-        let o = orderGenerator(marketSellParams);
+        let o = og.make(marketSellParams);
         assert.deepEqual(o, {
             id: crypto.createHash('sha1').update(JSON.stringify(marketSellParams)).digest("hex"),
             size: sellParams.size.toString(),
@@ -75,9 +95,28 @@ describe("#OrderGenerator", () => {
             side: "sell",
             stp: "dc",
             type: "market",
-            time_in_force: "GTC",
             post_only: false,
-            created_at: "2016-12-08T20:02:28.53864Z",
+            created_at: og.currentTime,
+            fill_fees: "0.0000000000000000",
+            filled_size: "0.00000000",
+            executed_value: "0.0000000000000000",
+            status: "pending",
+            settled: false
+        });
+    });
+
+    it('properly fills out market buy orders for market orders with funds', () => {
+        let o = og.make(marKetBuyParamsWithFunds);
+        assert.deepEqual(o, {
+            id: crypto.createHash('sha1').update(JSON.stringify(marKetBuyParamsWithFunds)).digest("hex"),
+            product_id: sellParams.product_id,
+            side: "buy",
+            stp: "dc",
+            specified_funds: marKetBuyParamsWithFunds.funds.toString(),
+            funds: (marKetBuyParamsWithFunds.funds * 0.997).toString(),
+            type: "market",
+            post_only: false,
+            created_at: og.currentTime,
             fill_fees: "0.0000000000000000",
             filled_size: "0.00000000",
             executed_value: "0.0000000000000000",

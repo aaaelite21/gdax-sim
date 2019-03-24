@@ -36,6 +36,25 @@ describe("#ApiSim Market Orders With Funds", () => {
 
     describe("#fillOrder", () => {
         let time = "2018-12-06T01:46:01.162000Z";
+        it('has the proper adjustmets made to the json object', () => {
+            let Gdax = new ApiSim(2000, 2000);
+            Gdax.currentPrice = 20;
+            Gdax.buy(marketBuyPerams, (err, res, data) => {
+                Gdax.fillOrder(data.id, data.size, time);
+                let order = Gdax.user.orders[0];
+                assert.equal(order.settled, true);
+                assert.equal(order.status, 'done');
+                assert.equal(order.fill_fees, (parseFloat(marketBuyPerams.funds) * 0.003).toString())
+                assert.equal(order.done_reason, 'filled');
+                assert.equal(order.done_at, Gdax.currentTime);
+                assert.equal(order.stp, undefined);
+                assert.equal(order.specified_funds, marketBuyPerams.funds.toString());
+                assert.equal(order.funds, (marketBuyPerams.funds * 0.997).toString());
+                assert.equal(order.filled_size, (order.funds / Gdax.currentPrice).toString());
+                assert.equal(order.executed_value, order.funds);
+            });
+        });
+
         it("deducts the value of the order (funds) from the fiat balance", () => {
             let Gdax = new ApiSim(500, 0);
             Gdax.currentPrice = 35
@@ -71,7 +90,7 @@ describe("#ApiSim Market Orders With Funds", () => {
             let target =
                 Gdax.user.fiatBalance +
                 marketSellPerams.funds * 0.997;
-            Gdax.sell(marketBuyPerams, (err, res, data) => {
+            Gdax.sell(marketSellPerams, (err, res, data) => {
                 Gdax.fillOrder(data.id, data.size, time);
                 assert.equal(Gdax.user.fiatBalance, target);
             });

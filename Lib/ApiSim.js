@@ -1,10 +1,11 @@
 const WebocketSim = require('./WebsocketSim');
 const UserSim = require('./UserAccountSim');
-const orderGenerator = require('./OrderGenerator');
+const GenerateOrder = require('./OrderGenerator');
 const crypto = require('crypto');
 const HistoricRates = require('./HistoricRates');
 const Heartbeat = require('./Heartbeat');
 const GetOrder = require('./Getorder')
+const CompleteOrder = require('./CompleteOrder');
 
 class ApiSim {
     constructor(fb, cb) {
@@ -14,6 +15,7 @@ class ApiSim {
         this.websocketClient = new WebocketSim();
         this.currentPrice = 0;
         this.pair = 'ETH-BTC';
+        this.currentTime = (new Date()).toISOString();
         this.historics = {
             m1: [],
             m5: [],
@@ -28,6 +30,10 @@ class ApiSim {
 
     generateSalt() {
         return (new Date()).getTime().toString();
+    }
+
+    completeOrder(order) {
+        CompleteOrder.call(this, order);
     }
 
     createHeartbeat(pair, time) {
@@ -48,6 +54,10 @@ class ApiSim {
 
     handleMatch(match) {
         HistoricRates.handleMatch.call(this, match);
+    }
+
+    generateOrder(orderParams, salt) {
+        return GenerateOrder.call(this, orderParams, salt);
     }
 
     buy(buyParams, callback) {
@@ -94,13 +104,15 @@ class ApiSim {
     backtest(candleData) {
         let messages = this.createMatchesFromCandle(candleData);
         messages.reverse();
-        let nextPrice, currentTime, nextTime;
+        let nextPrice, nextTime;
         while (messages.length > 0) {
             let m = messages.pop();
             if (m.price !== undefined) {
                 this.currentPrice = parseFloat(m.price);
             }
-            currentTime = m.time;
+            if (m.time !== undefined) {
+                this.currentTime = m.time;
+            }
             //market orders
             if (this.user.orders.length >= 1) {
                 let subArray = [];
@@ -111,7 +123,7 @@ class ApiSim {
                 });
                 for (let i = 0; i < subArray.length; i++) {
                     let moid = subArray[i];
-                    let newmsg = this.fillOrder(moid, null, currentTime);
+                    let newmsg = this.fillOrder(moid, null, this.currentTime);
                     for (let i = newmsg.length - 1; i >= 0; i--) {
                         messages.push(newmsg[i])
                     }
@@ -131,7 +143,7 @@ class ApiSim {
                         this.user.limitOrders.openBuys.forEach((value, index) => {
                             let orderPrice = parseFloat(value.price);
                             if (value.status === 'pending' && orderPrice > nextPrice && orderPrice <= this.currentPrice) {
-                                newmsg = this.fillOrder(this.user.limitOrders.openBuys[index].id, null, this.avgTime(currentTime, nextTime));
+                                newmsg = this.fillOrder(this.user.limitOrders.openBuys[index].id, null, this.avgTime(this.currentTime, nextTime));
                             }
                         });
 
@@ -140,7 +152,7 @@ class ApiSim {
                         this.user.limitOrders.openSells.forEach((value, index) => {
                             let orderPrice = parseFloat(value.price);
                             if (value.status === 'pending' && orderPrice < nextPrice && orderPrice >= this.currentPrice) {
-                                newmsg = this.fillOrder(this.user.limitOrders.openSells[index].id, null, this.avgTime(currentTime, nextTime));
+                                newmsg = this.fillOrder(this.user.limitOrders.openSells[index].id, null, this.avgTime(this.currentTime, nextTime));
                             }
                         });
                     }
@@ -177,11 +189,11 @@ class ApiSim {
             if (limitBuyIndex !== -1) {
                 order = this.user.limitOrders.openBuys[limitBuyIndex];
                 this.user.cryptoBalance += parseFloat(order.size);
-                this.user.limitOrders.openBuys[limitBuyIndex].status = 'filled';
+                this.completeOrder(this.user.limitOrders.openBuys[limitBuyIndex]);
             } else if (limitSellIndex !== -1) {
                 order = this.user.limitOrders.openSells[limitSellIndex];
                 this.user.fiatBalance += parseFloat(order.size) * parseFloat(order.price);
-                this.user.limitOrders.openSells[limitSellIndex].status = 'filled';
+                this.completeOrder(this.user.limitOrders.openSells[limitSellIndex]);
             }
 
             messages.push(this.createMatch({
@@ -205,14 +217,19 @@ class ApiSim {
                 time: time
             });
         } else if (orderIndex !== -1) {
+            this.completeOrder(this.user.orders[orderIndex]);
             order = this.user.orders[orderIndex];
             if (order.side === 'buy') {
-                this.user.cryptoBalance += parseFloat(order.size);
-                this.user.fiatBalance -= parseFloat(order.size) * this.currentPrice * 1.003;
+                let size = order.size === undefined ? order.filled_size : order.size;
+                let funds = order.size === undefined ? parseFloat(order.specified_funds) :
+                    parseFloat(order.size) * this.currentPrice * 1.003;
+                this.user.cryptoBalance += parseFloat(size);
+                this.user.fiatBalance -= funds
             } else if (order.side === 'sell') {
-                this.user.fiatBalance += parseFloat(order.size) * this.currentPrice * 0.997;
+                let funds = order.size === undefined ? parseFloat(order.funds) :
+                    parseFloat(order.size) * this.currentPrice * 0.997;
+                this.user.fiatBalance += funds;
             }
-            this.user.orders[orderIndex].status = 'filled';
             messages.push(this.createMatch({
                 side: order.side,
                 taker_order_id: order.id,
@@ -243,7 +260,7 @@ class ApiSim {
         let orderPrice = parseFloat(orderPerams.price);
         let orderSize = parseFloat(orderPerams.size);
         let orderFunds = parseFloat(orderPerams.funds);
-        let order = orderGenerator(orderPerams, this.generateSalt());
+        let order = this.generateOrder(orderPerams, this.generateSalt());
         if (!(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) >= this.currentPrice) &&
             !(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) * parseFloat(order.size) > this.user.fiatBalance) &&
             !(order.type === 'limit' && order.side === 'sell' && parseFloat(order.price) <= this.currentPrice) &&
@@ -265,17 +282,15 @@ class ApiSim {
             } else if (order.type === 'market') {
                 if (order.side === "buy") {
                     if (!isNaN(orderFunds)) {
-                        order.size = (orderFunds * 0.997 / this.currentPrice).toString()
+                        //order.size = (orderFunds * 0.997 / this.currentPrice).toString()
                     }
-                    order.funds = this.user.fiatBalance.toString();
                     this.user.orders.push(order);
                 } else {
                     if (!isNaN(orderFunds)) {
                         orderSize = (orderFunds / this.currentPrice)
-                        order.size = orderSize.toString();
+                        //order.size = orderSize.toString();
                     }
                     this.user.cryptoBalance -= orderSize;
-                    order.funds = this.user.cryptoBalance.toString();
                     this.user.orders.push(order);
                 }
             }
@@ -366,7 +381,7 @@ class ApiSim {
         return {
             type: 'match',
             side: templateObj.side,
-            size: templateObj.size.toString(),
+            size: templateObj.size === undefined ? templateObj.filled_size : templateObj.size,
             price: templateObj.price.toString(),
             time: templateObj.time,
             product_id: templateObj.product_id,
