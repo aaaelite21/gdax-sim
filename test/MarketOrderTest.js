@@ -60,10 +60,10 @@ const limitBuyPerams = {
 
 describe("#ApiSim Market Orders", () => {
   describe("#sell", () => {
-    it("adds the funds value to the market order", () => {
+    it("does not add 'funds' value to market sells that use size", () => {
       let Gdax = new ApiSim();
       Gdax.sell(marketSellPerams, (err, res, data) => {
-        assert.equal(data.funds, Gdax.user.cryptoBalance.toString());
+        assert.equal(data.funds, undefined);
       });
     });
     it("saves the market order to the user.marketOrders.openSells array", () => {
@@ -136,6 +136,38 @@ describe("#ApiSim Market Orders", () => {
 
   describe("#fillOrder", () => {
     let time = "2018-12-06T01:46:01.162000Z";
+    it('has the proper adjustmets made to the json object', () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 2;
+      Gdax.sell(marketSellPerams, (err, res, data) => {
+        Gdax.fillOrder(data.id, data.size, time);
+        let order = Gdax.user.orders[0];
+        assert.equal(order.settled, true);
+        assert.equal(order.status, 'done');
+        assert.equal(order.executed_value, (marketSellPerams.size * Gdax.currentPrice).toString());
+        assert.equal(order.filled_size, marketSellPerams.size.toString());
+        assert.equal(order.fill_fees, (marketSellPerams.size * Gdax.currentPrice * 0.003).toString())
+        assert.equal(order.done_reason, 'filled');
+        assert.equal(order.done_at, Gdax.currentTime);
+        assert.equal(order.stp, undefined);
+      });
+    });
+    it('has the proper adjustmets made to the json object', () => {
+      let Gdax = new ApiSim();
+      Gdax.currentPrice = 2;
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        Gdax.fillOrder(data.id, data.size, time);
+        let order = Gdax.user.orders[0];
+        assert.equal(order.settled, true);
+        assert.equal(order.status, 'done');
+        assert.equal(order.executed_value, (marketBuyPerams.size * Gdax.currentPrice).toString());
+        assert.equal(order.filled_size, marketBuyPerams.size.toString());
+        assert.equal(order.fill_fees, (marketBuyPerams.size * Gdax.currentPrice * 0.003).toString())
+        assert.equal(order.done_reason, 'filled');
+        assert.equal(order.done_at, Gdax.currentTime);
+        assert.equal(order.stp, undefined);
+      });
+    });
 
     it("adds the (size * price) - fee of a market sell order to the fiat account", () => {
       let Gdax = new ApiSim();
@@ -144,7 +176,6 @@ describe("#ApiSim Market Orders", () => {
         Gdax.user.fiatBalance +
         marketSellPerams.size * Gdax.currentPrice * 0.997;
       Gdax.sell(marketSellPerams, (err, res, data) => {
-        console.log(data)
         Gdax.fillOrder(data.id, data.size, time);
         assert.equal(Gdax.user.fiatBalance, target);
       });
