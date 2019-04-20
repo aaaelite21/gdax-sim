@@ -13,7 +13,7 @@ class Candle {
     process(price, size) {
         let p = parseFloat(price);
         let v = parseFloat(size);
-        this.open = this.open === undefined ? p : this.open
+        this.open = this.open === undefined ? p : this.open;
         this.close = p;
         this.high = this.high === undefined ? p : (p > this.high ? p : this.high);
         this.low = this.low === undefined ? p : (p < this.low ? p : this.low);
@@ -74,7 +74,8 @@ module.exports = {
     },
     getProduct: function (product, params, callback) {
         let section = [],
-            data = [];
+            data = [],
+            end = params.end !== undefined ? (new Date(params.end).getTime()) / 1000 : Infinity;
         switch (params.granularity) {
             case 60:
                 section = this.historics.m1.slice().reverse();
@@ -101,12 +102,13 @@ module.exports = {
                 break;
         }
         for (let i = 0; i < section.length; i++) {
-            if (section[i] instanceof Candle) {
-                data.push(section[i].toArray());
-            } else {
-                data.push(section[i]);
+            let a = section[i];
+            if (a instanceof Candle) {
+                a = section[i].toArray()
             }
-
+            if (a[0] < end) {
+                data.push(a);
+            }
         }
 
         if (typeof callback === 'function') {

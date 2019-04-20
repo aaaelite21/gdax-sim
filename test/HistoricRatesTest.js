@@ -177,7 +177,7 @@ describe('#Historic Rates', () => {
             assert.equal(Gdax.historics.m1.length, 300);
             let lastCandleMinute = (new Date(Gdax.historics.m1[Gdax.historics.m1.length - 1].time)).getMinutes();
             let lastTestMinute = (new Date(TestData.candles.oneHour[TestData.candles.oneHour.length - 1].time)).getMinutes();
-            assert.equal(lastCandleMinute, lastTestMinute)
+            assert.equal(lastCandleMinute, lastTestMinute);
         });
         it("works with consecuative runs of different inputs", () => {
             let Gdax = new ApiSim();
@@ -190,6 +190,22 @@ describe('#Historic Rates', () => {
                     assert.equal(data.length, i + 1);
                 });
             }
+        });
+    });
+    describe("#Start and End parameters", () => {
+        it('end the most recent candle does not exceed the start param', () => {
+            let Gdax = new ApiSim();
+            let days = TestData.candles.threeDaysAsArray;
+            for (let i = 0; i < days.length; i++) {
+                Gdax.backtest(days[i]);
+            }
+            Gdax.getProductHistoricRates('ETH-BTC', {
+                granularity: 60,
+                end: (new Date('Sun, 03 Jan 2016 23:21:00 GMT')).toISOString()
+            }, (err, res, data) => {
+                assert.equal(data[0][0] * 1000, (new Date('Sun, 03 Jan 2016 23:20:00 GMT')).getTime());
+            });
+
         });
     });
 });
