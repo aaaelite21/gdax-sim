@@ -39,11 +39,16 @@ gdax.backtest(require('./TestData/LTC/27Nov2018.json'));
   * Sell
     - limit and market
   * cancelOrder
+    - limit only
+  * getOrder
+  * getHistoricRates
+    - takes 'granularity'
+    - takes 'end'
 
 ### Coming Soon
   * Get Accounts
   * Get Balance
-  * Get Order
+  * Multi-asset web socket
 
 
 ## Unit Test
@@ -52,5 +57,5 @@ Done using a global install of Mocha
 gdax-sim> mocha
 ```
 
-## Rules
-Please do the best you can to avoid endless dependencies 
+## Dev Blog
+[DownToCrypto.com](https://downtocrypto.com)
