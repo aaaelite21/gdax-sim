@@ -36,6 +36,16 @@ describe("#ApiSim Market Orders With Funds", () => {
 
     describe("#fillOrder", () => {
         let time = "2018-12-06T01:46:01.162000Z";
+        it('produces a match with the proper variables', () => {
+            let Gdax = new ApiSim(2000, 2000);
+            Gdax.currentPrice = 20;
+            Gdax.buy(marketBuyPerams, (err, res, data) => {
+                let order = Gdax.user.orders[0];
+                let match = Gdax.fillOrder(data.id, data.size, time)[0];
+                assert.equal(match.size, order.filled_size);
+            });
+        });
+
         it('has the proper adjustmets made to the json object', () => {
             let Gdax = new ApiSim(2000, 2000);
             Gdax.currentPrice = 20;

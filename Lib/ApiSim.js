@@ -221,10 +221,12 @@ class ApiSim {
             order = this.user.orders[orderIndex];
             if (order.side === 'buy') {
                 let size = order.size === undefined ? order.filled_size : order.size;
-                let funds = order.size === undefined ? parseFloat(order.specified_funds) :
+                let funds = order.specified_funds !== undefined ? parseFloat(order.specified_funds) :
                     parseFloat(order.size) * this.currentPrice * 1.003;
                 this.user.cryptoBalance += parseFloat(size);
-                this.user.fiatBalance -= funds
+                this.user.fiatBalance -= funds;
+                //no size on markt buys with funds until they are completed
+
             } else if (order.side === 'sell') {
                 let funds = order.size === undefined ? parseFloat(order.funds) :
                     parseFloat(order.size) * this.currentPrice * 0.997;
@@ -233,7 +235,7 @@ class ApiSim {
             messages.push(this.createMatch({
                 side: order.side,
                 taker_order_id: order.id,
-                size: order.size,
+                size: order.size !== undefined ? order.size : order.filled_size,
                 price: this.currentPrice,
                 product_id: order.product_id,
                 time: time
