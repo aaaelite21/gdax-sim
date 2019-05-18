@@ -106,7 +106,7 @@ module.exports = {
             if (a instanceof Candle) {
                 a = section[i].toArray()
             }
-            if (a[0] < end) {
+            if (a[0] <= end) {
                 data.push(a);
             }
         }

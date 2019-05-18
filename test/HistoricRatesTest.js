@@ -203,7 +203,7 @@ describe('#Historic Rates', () => {
                 granularity: 60,
                 end: (new Date('Sun, 03 Jan 2016 23:21:00 GMT')).toISOString()
             }, (err, res, data) => {
-                assert.equal(data[0][0] * 1000, (new Date('Sun, 03 Jan 2016 23:20:00 GMT')).getTime());
+                assert.equal(data[0][0] * 1000, (new Date('Sun, 03 Jan 2016 23:21:00 GMT')).getTime());
             });
 
         });
