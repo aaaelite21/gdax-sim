@@ -193,19 +193,54 @@ describe('#Historic Rates', () => {
         });
     });
     describe("#Start and End parameters", () => {
-        it('end the most recent candle does not exceed the start param', () => {
+        it('the most recent candle does not exceed the end param', () => {
             let Gdax = new ApiSim();
             let days = TestData.candles.threeDaysAsArray;
+            let end_time = new Date('Sun, 03 Jan 2016 23:21:00 GMT');
+            let start_time = new Date(end_time - (300 * 60 * 1000));
+
             for (let i = 0; i < days.length; i++) {
                 Gdax.backtest(days[i]);
             }
             Gdax.getProductHistoricRates('ETH-BTC', {
                 granularity: 60,
-                end: (new Date('Sun, 03 Jan 2016 23:21:00 GMT')).toISOString()
+                start: start_time.toISOString(),
+                end: end_time.toISOString()
             }, (err, res, data) => {
-                assert.equal(data[0][0] * 1000, (new Date('Sun, 03 Jan 2016 23:21:00 GMT')).getTime());
+                assert(data[0][0] * 1000 < end_time.getTime());
             });
+        });
+        it('the oldest candle does not preceed the start param', () => {
+            let Gdax = new ApiSim();
+            let days = TestData.candles.threeDaysAsArray;
+            let end_time = new Date('Sun, 03 Jan 2016 23:21:00 GMT');
+            let start_time = new Date(end_time - (10 * 60 * 1000));
 
+            for (let i = 0; i < days.length; i++) {
+                Gdax.backtest(days[i]);
+            }
+            Gdax.getProductHistoricRates('ETH-BTC', {
+                granularity: 60,
+                start: start_time.toISOString(),
+                end: end_time.toISOString()
+            }, (err, res, data) => {
+                assert(data[data.length - 1][0] * 1000 >= start_time.getTime());
+            });
+        });
+        it('if no start end is ignored', () => {
+            let Gdax = new ApiSim();
+            let days = TestData.candles.threeDaysAsArray;
+            let end_time = new Date('Sun, 03 Jan 2016 23:21:00 GMT');
+
+            for (let i = 0; i < days.length; i++) {
+                Gdax.backtest(days[i]);
+            }
+            Gdax.getProductHistoricRates('ETH-BTC', {
+                granularity: 60,
+                end: end_time.toISOString()
+            }, (err, res, data) => {
+                assert(data[0][0] * 1000 > end_time.getTime());
+            });
         });
     });
 });

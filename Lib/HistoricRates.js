@@ -75,7 +75,8 @@ module.exports = {
     getProduct: function (product, params, callback) {
         let section = [],
             data = [],
-            end = params.end !== undefined ? (new Date(params.end).getTime()) / 1000 : Infinity;
+            end = params.end !== undefined ? (new Date(params.end).getTime()) / 1000 : undefined,
+            start = params.start !== undefined ? (new Date(params.start).getTime()) / 1000 : undefined;
         switch (params.granularity) {
             case 60:
                 section = this.historics.m1.slice().reverse();
@@ -106,7 +107,11 @@ module.exports = {
             if (a instanceof Candle) {
                 a = section[i].toArray()
             }
-            if (a[0] <= end) {
+            if (start !== undefined && end !== undefined) {
+                if (a[0] >= start && a[0] < end) {
+                    data.push(a);
+                }
+            } else {
                 data.push(a);
             }
         }
