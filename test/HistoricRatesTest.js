@@ -207,7 +207,7 @@ describe('#Historic Rates', () => {
                 start: start_time.toISOString(),
                 end: end_time.toISOString()
             }, (err, res, data) => {
-                assert(data[0][0] * 1000 < end_time.getTime());
+                assert(data[0][0] * 1000 === end_time.getTime());
             });
         });
         it('the oldest candle does not preceed the start param', () => {

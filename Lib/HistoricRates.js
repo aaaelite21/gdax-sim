@@ -108,7 +108,7 @@ module.exports = {
                 a = section[i].toArray()
             }
             if (start !== undefined && end !== undefined) {
-                if (a[0] >= start && a[0] < end) {
+                if (a[0] >= start && a[0] <= end) {
                     data.push(a);
                 }
             } else {
