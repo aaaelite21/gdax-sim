@@ -1,6 +1,6 @@
 {
   "name": "gdax-sim",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Simulator used to help unit test and back test various Coinbase-Pro (gdax) interactions.",
   "main": "gdax-sim.js",
   "directories": {
