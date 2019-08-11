@@ -6,9 +6,11 @@ const HistoricRates = require('./HistoricRates');
 const Heartbeat = require('./Heartbeat');
 const GetOrder = require('./Getorder')
 const CompleteOrder = require('./CompleteOrder');
+const EventDriver = require('../Lib/EventDriver');
 
 class ApiSim {
     constructor(fb, cb) {
+        this.eventDriver = new EventDriver();
         this.user = new UserSim();
         this.user.cryptoBalance = isNaN(cb) ? 100 : cb;
         this.user.fiatBalance = isNaN(fb) ? 100 : fb;
@@ -252,6 +254,11 @@ class ApiSim {
                 time: time
             });
         }
+        if (messages[1].side === 'buy')
+            this.eventDriver.onBuy(this.user.fiatBalance, this.user.cryptoBalance);
+        else
+            this.eventDriver.onSell(this.user.fiatBalance, this.user.cryptoBalance);
+
         return messages;
     }
 
