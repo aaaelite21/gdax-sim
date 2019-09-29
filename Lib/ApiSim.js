@@ -276,8 +276,10 @@ class ApiSim {
             !(order.type === 'market' && order.side === 'buy' && this.currentPrice * parseFloat(order.size) * 1.003 > this.user.fiatBalance) &&
             !(order.type === 'market' && order.side === 'buy' && orderFunds > this.user.fiatBalance) &&
             !(order.type === 'market' && order.side === 'sell' && orderFunds > this.user.cryptoBalance * this.currentPrice) &&
-            !(order.side === 'sell' && parseFloat(order.size) > this.user.cryptoBalance) &&
-            !(order.side === 'buy' && parseFloat(order.funds) > this.user.fiatBalance)) {
+            !(order.side === 'sell' && parseFloat(order.size) > this.user.cryptoBalance)
+            /*&&
+                   !(order.side === 'buy' && parseFloat(order.funds) > this.user.fiatBalance)*/
+        ) {
 
             //save order
             if (order.type === 'limit') {
