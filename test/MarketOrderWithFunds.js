@@ -54,12 +54,12 @@ describe("#ApiSim Market Orders With Funds", () => {
                 let order = Gdax.user.orders[0];
                 assert.equal(order.settled, true);
                 assert.equal(order.status, 'done');
-                assert.equal(order.fill_fees, (parseFloat(marketBuyPerams.funds) * 0.003).toString())
+                assert.equal(order.fill_fees, (parseFloat(marketBuyPerams.funds) * Gdax.taker_fee).toString())
                 assert.equal(order.done_reason, 'filled');
                 assert.equal(order.done_at, Gdax.currentTime);
                 assert.equal(order.stp, undefined);
                 assert.equal(order.specified_funds, marketBuyPerams.funds.toString());
-                assert.equal(order.funds, (marketBuyPerams.funds * 0.997).toString());
+                assert.equal(order.funds, (marketBuyPerams.funds * 0.995).toString());
                 assert.equal(order.filled_size, (order.funds / Gdax.currentPrice).toString());
                 assert.equal(order.executed_value, order.funds);
             });
@@ -79,7 +79,7 @@ describe("#ApiSim Market Orders With Funds", () => {
             Gdax.currentPrice = 35;
             let target =
                 Gdax.user.cryptoBalance +
-                marketBuyPerams.funds * 0.997 / Gdax.currentPrice;
+                marketBuyPerams.funds * 0.995 / Gdax.currentPrice;
             Gdax.buy(marketBuyPerams, (err, res, data) => {
                 Gdax.fillOrder(data.id, data.size, time);
                 assert.equal(Gdax.user.cryptoBalance, target);
@@ -99,7 +99,7 @@ describe("#ApiSim Market Orders With Funds", () => {
             Gdax.currentPrice = 35;
             let target =
                 Gdax.user.fiatBalance +
-                marketSellPerams.funds * 0.997;
+                marketSellPerams.funds * 0.995;
             Gdax.sell(marketSellPerams, (err, res, data) => {
                 Gdax.fillOrder(data.id, data.size, time);
                 assert.equal(Gdax.user.fiatBalance, target);

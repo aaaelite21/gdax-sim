@@ -146,7 +146,7 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(order.status, 'done');
         assert.equal(order.executed_value, (marketSellPerams.size * Gdax.currentPrice).toString());
         assert.equal(order.filled_size, marketSellPerams.size.toString());
-        assert.equal(order.fill_fees, (marketSellPerams.size * Gdax.currentPrice * 0.003).toString())
+        assert.equal(order.fill_fees, (marketSellPerams.size * Gdax.currentPrice * Gdax.taker_fee).toString())
         assert.equal(order.done_reason, 'filled');
         assert.equal(order.done_at, Gdax.currentTime);
         assert.equal(order.stp, undefined);
@@ -162,7 +162,7 @@ describe("#ApiSim Market Orders", () => {
         assert.equal(order.status, 'done');
         assert.equal(order.executed_value, (marketBuyPerams.size * Gdax.currentPrice).toString());
         assert.equal(order.filled_size, marketBuyPerams.size.toString());
-        assert.equal(order.fill_fees, (marketBuyPerams.size * Gdax.currentPrice * 0.003).toString())
+        assert.equal(order.fill_fees, (marketBuyPerams.size * Gdax.currentPrice * Gdax.taker_fee).toString())
         assert.equal(order.done_reason, 'filled');
         assert.equal(order.done_at, Gdax.currentTime);
         assert.equal(order.stp, undefined);
@@ -174,7 +174,7 @@ describe("#ApiSim Market Orders", () => {
       Gdax.currentPrice = 2;
       let target =
         Gdax.user.fiatBalance +
-        marketSellPerams.size * Gdax.currentPrice * 0.997;
+        marketSellPerams.size * Gdax.currentPrice * (1 - Gdax.taker_fee);
       Gdax.sell(marketSellPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
         assert.equal(Gdax.user.fiatBalance, target);
@@ -197,7 +197,7 @@ describe("#ApiSim Market Orders", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       let target =
-        Gdax.user.fiatBalance - ((marketBuyPerams.size * Gdax.currentPrice) * 1.003)
+        Gdax.user.fiatBalance - ((marketBuyPerams.size * Gdax.currentPrice) * (1 + Gdax.taker_fee))
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
         assert.equal(Gdax.user.fiatBalance.toFixed(2), target.toFixed(2));
