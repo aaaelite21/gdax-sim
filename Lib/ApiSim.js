@@ -9,7 +9,7 @@ const CompleteOrder = require('./CompleteOrder');
 const EventDriver = require('../Lib/EventDriver');
 
 class ApiSim {
-    constructor(fb, cb) {
+    constructor(fb, cb, taker_fee) {
         this.eventDriver = new EventDriver();
         this.user = new UserSim();
         this.user.cryptoBalance = isNaN(cb) ? 100 : cb;
@@ -18,6 +18,7 @@ class ApiSim {
         this.currentPrice = 0;
         this.pair = 'ETH-BTC';
         this.currentTime = (new Date()).toISOString();
+        this.taker_fee = isNaN(taker_fee) ? 0.005 : taker_fee / 100;
         this.historics = {
             m1: [],
             m5: [],
@@ -224,14 +225,14 @@ class ApiSim {
             if (order.side === 'buy') {
                 let size = order.size === undefined ? order.filled_size : order.size;
                 let funds = order.specified_funds !== undefined ? parseFloat(order.specified_funds) :
-                    parseFloat(order.size) * this.currentPrice * 1.003;
+                    parseFloat(order.size) * this.currentPrice * (1 + this.taker_fee);
                 this.user.cryptoBalance += parseFloat(size);
                 this.user.fiatBalance -= funds;
                 //no size on markt buys with funds until they are completed
 
             } else if (order.side === 'sell') {
                 let funds = order.size === undefined ? parseFloat(order.funds) :
-                    parseFloat(order.size) * this.currentPrice * 0.997;
+                    parseFloat(order.size) * this.currentPrice * (1 - this.taker_fee);
                 this.user.fiatBalance += funds;
             }
             messages.push(this.createMatch({
@@ -273,7 +274,7 @@ class ApiSim {
         if (!(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) >= this.currentPrice) &&
             !(order.type === 'limit' && order.side === 'buy' && parseFloat(order.price) * parseFloat(order.size) > this.user.fiatBalance) &&
             !(order.type === 'limit' && order.side === 'sell' && parseFloat(order.price) <= this.currentPrice) &&
-            !(order.type === 'market' && order.side === 'buy' && this.currentPrice * parseFloat(order.size) * 1.003 > this.user.fiatBalance) &&
+            !(order.type === 'market' && order.side === 'buy' && this.currentPrice * parseFloat(order.size) * (1 + this.taker_fee) > this.user.fiatBalance) &&
             !(order.type === 'market' && order.side === 'buy' && orderFunds > this.user.fiatBalance) &&
             !(order.type === 'market' && order.side === 'sell' && orderFunds > this.user.cryptoBalance * this.currentPrice) &&
             !(order.side === 'sell' && parseFloat(order.size) > this.user.cryptoBalance)
@@ -293,7 +294,7 @@ class ApiSim {
             } else if (order.type === 'market') {
                 if (order.side === "buy") {
                     if (!isNaN(orderFunds)) {
-                        //order.size = (orderFunds * 0.997 / this.currentPrice).toString()
+                        //order.size = (orderFunds * (1 - this.taker_fee)) / this.currentPrice).toString()
                     }
                     this.user.orders.push(order);
                 } else {

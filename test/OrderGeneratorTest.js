@@ -1,6 +1,7 @@
 const orderGenerator = require('../Lib/OrderGenerator');
 const assert = require('assert');
 const crypto = require('crypto');
+const ApiSim = require('../Lib/ApiSim');
 
 const buyParams = {
     price: 25.00,
@@ -33,6 +34,7 @@ const marKetBuyParamsWithFunds = {
 class testSim {
     constructor() {
         this.currentTime = (new Date()).toISOString();
+        this.taker_fee = 0.005;
         this.user = {
             cryptoBalance: 2
         }
@@ -113,7 +115,7 @@ describe("#OrderGenerator", () => {
             side: "buy",
             stp: "dc",
             specified_funds: marKetBuyParamsWithFunds.funds.toString(),
-            funds: (marKetBuyParamsWithFunds.funds * 0.997).toString(),
+            funds: (marKetBuyParamsWithFunds.funds * 0.995).toString(),
             type: "market",
             post_only: false,
             created_at: og.currentTime,

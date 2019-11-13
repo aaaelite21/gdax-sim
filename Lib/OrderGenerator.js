@@ -42,7 +42,7 @@ module.exports = function (orderPerams, salt) {
             }
         } else {
             order.specified_funds = orderPerams.funds.toString();
-            order.funds = (orderPerams.funds * 0.997).toString();
+            order.funds = (orderPerams.funds * (1 - this.taker_fee)).toString();
         }
 
     }
