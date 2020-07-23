@@ -23,9 +23,6 @@ class ApiSim {
     this.user.fiatBalance = isNaN(params.quote_balance)
       ? 100
       : params.quote_balance;
-    this.user.fiatBalance = isNaN(params.quote_balance)
-      ? 100
-      : params.quote_balance;
 
     this.hour_start_on = isNaN(params.hour_start_on) ? 0 : params.hour_start_on;
 
