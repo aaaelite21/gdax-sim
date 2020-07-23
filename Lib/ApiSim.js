@@ -27,6 +27,8 @@ class ApiSim {
       ? 100
       : params.quote_balance;
 
+    this.hour_start_on = isNaN(params.hour_start_on) ? 0 : params.hour_start_on;
+
     this.websocketClient = new WebocketSim();
     this.currentPrice = 0;
     this.pair = "ETH-BTC";
@@ -65,10 +67,6 @@ class ApiSim {
 
   logHistoricData(message) {
     HistoricRates.processMatch.call(this, message);
-  }
-
-  handleMatch(match) {
-    HistoricRates.handleMatch.call(this, match);
   }
 
   generateOrder(orderParams, salt) {
