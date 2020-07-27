@@ -117,7 +117,7 @@ class ApiSim {
 
   //Below are supporting functions
   backtest(candleData, _options) {
-    let options = _options === undefined ? {} : options;
+    let options = _options === undefined ? {} : _options;
 
     let messages = this.createMatchesFromCandle(
       candleData,
