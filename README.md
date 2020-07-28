@@ -3,12 +3,15 @@
 Simulator used to help unit test and back test various Coinbase-Pro (gdax) interactions.
 
 ## Install
+
 ```
 npm i gdax-sim
 ```
 
 ## Backtest
+
 Reads data from saved candle objects and spits out matches 4 matches, one for open, one for the high, one for the low, and one for the close.
+
 - If open >= close, the high will be 'sent' second and the low third
 - If close > open, the low will be 'sent' second and the high third
   - Settings to change this will come later
@@ -16,9 +19,15 @@ Reads data from saved candle objects and spits out matches 4 matches, one for op
 - If there is a gap in teh data the time is filled with 1 heartbeat message per minute
 
 ## Example Code
+
 ```
 const ApiSim = require('gdax-sim)
-let gdax = new ApiSim(100, 0); //set base account values (usually (fiat, crypto))
+let gdax = new ApiSim({
+        quote_balance: 10,
+        base_balance: 10,
+        taker_fee: 0.5,
+        hour_start_on: 30,
+      }); //set base account (quote_balance-base_balance) taker_fee (in %), an when to start hourly candles
 gdax.pair = 'LTC-USD';//set the name of the pair
 gdax.websocketClient.on('message', (data) => {
   //your code to handle behavior upon recieving a message on the websocket
@@ -30,32 +39,39 @@ gdax.afterSession = () =>{
 }
 
 //start the backtest
-gdax.backtest(require('./TestData/LTC/27Nov2018.json'));
+gdax.backtest(require('./TestData/LTC/27Nov2018.json').{
+            start_time: "0000", //starts candles and events when >=
+            end_time: "2460"    //stops when 24 hour time is less than
+          });
 ```
 
 ## Currnet API Endpoints
-  * Buy
-    - limit and market
-  * Sell
-    - limit and market
-  * cancelOrder
-    - limit only
-  * getOrder
-  * getHistoricRates
-    - takes 'granularity'
-    - takes 'end'
+
+- Buy
+  - limit and market
+- Sell
+  - limit and market
+- cancelOrder
+  - limit only
+- getOrder
+- getHistoricRates
+  - takes 'granularity'
+  - takes 'end'
 
 ### Coming Soon
-  * Get Accounts
-  * Get Balance
-  * Multi-asset web socket
 
+- Get Accounts
+- Get Balance
+- Multi-asset web socket
 
 ## Unit Test
+
 Done using a global install of Mocha
+
 ```
 gdax-sim> mocha
 ```
 
 ## Dev Blog
+
 [DownToCrypto.com](https://downtocrypto.com)
