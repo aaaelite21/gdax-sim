@@ -302,9 +302,17 @@ class ApiSim {
       });
     }
     if (messages[1].side === "buy")
-      this.eventDriver.onBuy(this.user.fiatBalance, this.user.cryptoBalance);
+      this.eventDriver.onBuy(
+        this.user.fiatBalance,
+        this.user.cryptoBalance,
+        order,
+      );
     else
-      this.eventDriver.onSell(this.user.fiatBalance, this.user.cryptoBalance);
+      this.eventDriver.onSell(
+        this.user.fiatBalance,
+        this.user.cryptoBalance,
+        order,
+      );
 
     return messages;
   }
