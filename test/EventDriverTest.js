@@ -33,6 +33,19 @@ describe("#On Event", () => {
         Gdax.fillOrder(data.id, data.size, Date.now());
       });
     });
+    it("it contains the order that was executed", () => {
+      let Gdax = new ApiSim({
+        base_balance: 0,
+        quote_balance: 100,
+      });
+      Gdax.eventDriver.onBuy = (fiat, crypto, order) => {
+        assert.deepStrictEqual(order, Gdax.user.orders[0]);
+      };
+      Gdax.currentPrice = 30;
+      Gdax.buy(marketPerams, (err, res, data) => {
+        Gdax.fillOrder(data.id, data.size, Date.now());
+      });
+    });
   });
   describe("#OnSell", () => {
     it("executes when a any sell order is completed through the api", (done) => {
