@@ -19,7 +19,7 @@ describe("#ApiSim Market Orders With Funds", () => {
       let Gdax = new ApiSim(100, 100);
       Gdax.currentPrice = 35;
       Gdax.buy(marketBuyPerams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
   });
@@ -32,7 +32,7 @@ describe("#ApiSim Market Orders With Funds", () => {
       });
       Gdax.currentPrice = 35;
       Gdax.sell(marketSellPerams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
   });
@@ -48,7 +48,7 @@ describe("#ApiSim Market Orders With Funds", () => {
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         let order = Gdax.user.orders[0];
         let match = Gdax.fillOrder(data.id, data.size, time)[0];
-        assert.equal(match.size, order.filled_size);
+        assert.strictEqual(match.size, order.filled_size);
       });
     });
 
@@ -61,22 +61,28 @@ describe("#ApiSim Market Orders With Funds", () => {
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
         let order = Gdax.user.orders[0];
-        assert.equal(order.settled, true);
-        assert.equal(order.status, "done");
-        assert.equal(
+        assert.strictEqual(order.settled, true);
+        assert.strictEqual(order.status, "done");
+        assert.strictEqual(
           order.fill_fees,
           (parseFloat(marketBuyPerams.funds) * Gdax.taker_fee).toString(),
         );
-        assert.equal(order.done_reason, "filled");
-        assert.equal(order.done_at, Gdax.currentTime);
-        assert.equal(order.stp, undefined);
-        assert.equal(order.specified_funds, marketBuyPerams.funds.toString());
-        assert.equal(order.funds, (marketBuyPerams.funds * 0.995).toString());
-        assert.equal(
+        assert.strictEqual(order.done_reason, "filled");
+        assert.strictEqual(order.done_at, Gdax.currentTime);
+        assert.strictEqual(order.stp, undefined);
+        assert.strictEqual(
+          order.specified_funds,
+          marketBuyPerams.funds.toString(),
+        );
+        assert.strictEqual(
+          order.funds,
+          (marketBuyPerams.funds * 0.995).toString(),
+        );
+        assert.strictEqual(
           order.filled_size,
           (order.funds / Gdax.currentPrice).toString(),
         );
-        assert.equal(order.executed_value, order.funds);
+        assert.strictEqual(order.executed_value, order.funds);
       });
     });
 
@@ -89,8 +95,8 @@ describe("#ApiSim Market Orders With Funds", () => {
       let baseBalance = Gdax.user.fiatBalance;
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(
-          Gdax.user.fiatBalance.toFixed(2),
+        assert.strictEqual(
+          Gdax.user.fiatBalance,
           baseBalance - marketBuyPerams.funds,
         );
       });
@@ -106,7 +112,7 @@ describe("#ApiSim Market Orders With Funds", () => {
         (marketBuyPerams.funds * 0.995) / Gdax.currentPrice;
       Gdax.buy(marketBuyPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(Gdax.user.cryptoBalance, target);
+        assert.strictEqual(Gdax.user.cryptoBalance, target);
       });
     });
     it("deducts the value of the order (funds) from the crypto balance", () => {
@@ -116,7 +122,7 @@ describe("#ApiSim Market Orders With Funds", () => {
         Gdax.user.cryptoBalance - marketBuyPerams.funds / Gdax.currentPrice;
       Gdax.sell(marketSellPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(
+        assert.strictEqual(
           Gdax.user.cryptoBalance.toFixed(2),
           targetBalance.toFixed(2),
         );
@@ -128,7 +134,7 @@ describe("#ApiSim Market Orders With Funds", () => {
       let target = Gdax.user.fiatBalance + marketSellPerams.funds * 0.995;
       Gdax.sell(marketSellPerams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(Gdax.user.fiatBalance, target);
+        assert.strictEqual(Gdax.user.fiatBalance, target);
       });
     });
   });

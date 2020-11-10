@@ -26,7 +26,7 @@ describe("#On Event", () => {
       });
       Gdax.eventDriver.onBuy = (fiat, crypto) => {
         assert(fiat < 10 && fiat > 9);
-        assert.equal(crypto, 3);
+        assert.strictEqual(crypto, 3);
       };
       Gdax.currentPrice = 30;
       Gdax.buy(marketPerams, (err, res, data) => {
@@ -68,7 +68,7 @@ describe("#On Event", () => {
       });
       Gdax.eventDriver.onSell = (fiat, crypto) => {
         assert(fiat > 89);
-        assert.equal(crypto, 97);
+        assert.strictEqual(crypto, 97);
       };
       Gdax.currentPrice = 30;
       Gdax.sell(marketPerams, (err, res, data) => {

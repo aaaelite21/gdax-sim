@@ -10,15 +10,15 @@ describe("#ApiSim", () => {
   describe("#init", () => {
     it("takes a starting fiat value", () => {
       let sim = new ApiSim(params);
-      assert.equal(sim.user.fiatBalance, 5);
+      assert.strictEqual(sim.user.fiatBalance, 5);
     });
     it("takes a starting crypto value", () => {
       let sim = new ApiSim(params);
-      assert.equal(sim.user.cryptoBalance, 10);
+      assert.strictEqual(sim.user.cryptoBalance, 10);
     });
     it("takes a taker fee value", () => {
       let sim = new ApiSim(params);
-      assert.equal(sim.taker_fee, 0.005);
+      assert.strictEqual(sim.taker_fee, 0.005);
     });
   });
 });

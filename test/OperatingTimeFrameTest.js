@@ -7,12 +7,12 @@ describe("#start and stop times", () => {
   it("limits creation of messages to after the designated start time", () => {
     let Gdax = new ApiSim();
     let m = Gdax.createMatchesFromCandle(day, "1330");
-    assert.equal(
+    assert.strictEqual(
       new Date(m[0].time).getUTCHours(),
       13,
       "start time failed (hours)",
     );
-    assert.equal(
+    assert.strictEqual(
       new Date(m[0].time).getMinutes(),
       30,
       "start time failed (minutes)",
@@ -21,12 +21,12 @@ describe("#start and stop times", () => {
   it("limits creation of messages to before the designated end time", () => {
     let Gdax = new ApiSim();
     let m = Gdax.createMatchesFromCandle(day, "0000", "2000");
-    assert.equal(
+    assert.strictEqual(
       new Date(m[m.length - 1].time).getUTCHours(),
       19,
       `end time failed (hours) ${m[m.length - 1].time}`,
     );
-    assert.equal(
+    assert.strictEqual(
       new Date(m[m.length - 1].time).getMinutes(),
       59,
       "end time failed (minutes)",
