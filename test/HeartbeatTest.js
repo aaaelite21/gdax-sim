@@ -1,6 +1,7 @@
 const ApiSim = require("../Lib/ApiSim");
 const assert = require("assert");
 const TestData = require("./TestData");
+const Heartbeat = require("../Lib/Heartbeat");
 /*
 { type: 'heartbeat',
   last_trade_id: 0,
@@ -10,10 +11,9 @@ const TestData = require("./TestData");
 */
 describe("#Heartbeats", () => {
   describe("#Create Heartbeats", () => {
-    let Gdax = new ApiSim();
     let pair = "ETH-USDC";
     let time = Date.now();
-    let hb = Gdax.createHeartbeat(pair, time);
+    let hb = Heartbeat.create(pair, time);
     assert.strictEqual(hb.type, "heartbeat");
     assert.strictEqual(hb.time, new Date(time).toISOString());
     assert.strictEqual(hb.product_id, pair);

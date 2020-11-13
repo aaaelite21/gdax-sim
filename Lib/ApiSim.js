@@ -1,15 +1,11 @@
 const WebocketSim = require("./WebsocketSim");
 const UserSim = require("./UserAccountSim");
 const GenerateOrder = require("./OrderGenerator");
-const crypto = require("crypto");
+const { createMatch, createMatchesFromCandle } = require("./MatchGenerators");
 const HistoricRates = require("./HistoricRates");
-const Heartbeat = require("./Heartbeat");
 const GetOrder = require("./Getorder");
 const CompleteOrder = require("./CompleteOrder");
 const EventDriver = require("../Lib/EventDriver");
-const { emit } = require("process");
-const _24HourTimeParser = require("../Lib/Parse24Time");
-const Parse24Time = require("../Lib/Parse24Time");
 
 class ApiSim {
   constructor(_params) {
@@ -48,10 +44,6 @@ class ApiSim {
 
   completeOrder(order) {
     CompleteOrder.call(this, order);
-  }
-
-  createHeartbeat(pair, time) {
-    return Heartbeat.create.call(this, pair, time);
   }
 
   getOrder(orderId, callback) {
@@ -119,7 +111,7 @@ class ApiSim {
   backtest(candleData, _options) {
     let options = _options === undefined ? {} : _options;
 
-    let messages = this.createMatchesFromCandle(
+    let messages = createMatchesFromCandle(
       candleData,
       options.start_time,
       options.end_time,
@@ -239,7 +231,7 @@ class ApiSim {
       }
 
       messages.push(
-        this.createMatch({
+        createMatch({
           side: order.side,
           maker_order_id: order.id,
           size: order.size,
@@ -280,7 +272,7 @@ class ApiSim {
         this.user.fiatBalance += funds;
       }
       messages.push(
-        this.createMatch({
+        createMatch({
           side: order.side,
           taker_order_id: order.id,
           size: order.size !== undefined ? order.size : order.filled_size,
@@ -396,134 +388,6 @@ class ApiSim {
     if (typeof callback === "function") {
       callback(null, null, data);
     }
-  }
-
-  createMatchesFromCandle(candlesArrayOrObj, _start_time, _end_time) {
-    let start_time = _start_time === undefined ? "0000" : _start_time;
-    let end_time = _end_time === undefined ? "2460" : _end_time;
-    let messages = [];
-    let candles =
-      candlesArrayOrObj.length === undefined
-        ? [candlesArrayOrObj]
-        : candlesArrayOrObj;
-    let candleCount = candles.length;
-    let lastTime = null;
-
-    let start = Parse24Time(start_time);
-    let end = Parse24Time(end_time);
-    let afterStart = false;
-    let afterEnd = false;
-
-    for (let c = 0; c < candleCount; c++) {
-      let candle = candles[c];
-      let candleTime = new Date(candle.time);
-      if (
-        !afterStart &&
-        candleTime.getUTCHours() >= start.hours &&
-        candleTime.getMinutes() >= start.minutes
-      ) {
-        afterStart = true;
-      }
-      if (
-        !afterEnd &&
-        candleTime.getUTCHours() >= end.hours &&
-        candleTime.getMinutes() >= end.minutes
-      ) {
-        afterEnd = true;
-      }
-      if (afterStart && !afterEnd) {
-        if (lastTime !== null) {
-          while (lastTime + 60000 < candleTime.getTime()) {
-            lastTime += 60000;
-            messages.push(this.createHeartbeat(this.pair, lastTime));
-          }
-        }
-
-        lastTime = candleTime.getTime();
-
-        for (let i = 0; i < 4; i++) {
-          let key;
-          switch (i) {
-            case 0:
-              key = "open";
-              break;
-            case 1:
-              if (candle.close < candle.open) {
-                key = "high";
-              } else {
-                key = "low";
-              }
-              break;
-            case 2:
-              if (candle.close < candle.open) {
-                key = "low";
-              } else {
-                key = "high";
-              }
-              break;
-            case 3:
-              key = "close";
-              break;
-          }
-
-          //ToDo: base side off of the direction of price movemnet
-          let side = Math.random() > 0.5 ? "buy" : "sell";
-
-          if (messages.length > 0) {
-            let lastPrice = parseFloat(messages[messages.length - 1].price);
-            if (candle[key] > lastPrice) {
-              side = "buy";
-            } else if (candle[key] < lastPrice) {
-              side = "sell";
-            }
-          }
-
-          messages.push(
-            this.createMatch({
-              side: side,
-              size: candle.volume / 4,
-              time: candleTime.toISOString(),
-              product_id: this.product_id,
-              price: candle[key],
-            }),
-          );
-
-          candleTime.setSeconds(candleTime.getSeconds() + 14);
-        }
-      }
-    }
-
-    return messages;
-  }
-
-  createMatch(templateObj) {
-    return {
-      type: "match",
-      side: templateObj.side,
-      size:
-        templateObj.size === undefined
-          ? templateObj.filled_size
-          : templateObj.size,
-      price: templateObj.price.toString(),
-      time: templateObj.time,
-      product_id: templateObj.product_id,
-      trade_id: Math.round(100000000 * Math.random()),
-      sequence: Math.round(100000000 * Math.random()),
-      taker_order_id:
-        templateObj.taker_order_id !== undefined
-          ? templateObj.taker_order_id
-          : crypto
-              .createHash("sha1")
-              .update(JSON.stringify(Math.random().toString()))
-              .digest("hex"),
-      maker_order_id:
-        templateObj.maker_order_id !== undefined
-          ? templateObj.maker_order_id
-          : crypto
-              .createHash("sha1")
-              .update(JSON.stringify(Math.random().toString()))
-              .digest("hex"),
-    };
   }
 
   avgTime(t1, t2) {

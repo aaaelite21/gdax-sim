@@ -1,12 +1,14 @@
 const ApiSim = require("../gdax-sim");
 const assert = require("assert");
 const day = require("../TestData/27Nov2018LTCUSD.json");
-const gdaxSim = require("../gdax-sim");
+const {
+  createMatch,
+  createMatchesFromCandle,
+} = require("../Lib/MatchGenerators");
 
 describe("#start and stop times", () => {
   it("limits creation of messages to after the designated start time", () => {
-    let Gdax = new ApiSim();
-    let m = Gdax.createMatchesFromCandle(day, "1330");
+    let m = createMatchesFromCandle(day, "1330");
     assert.strictEqual(
       new Date(m[0].time).getUTCHours(),
       13,
@@ -19,8 +21,7 @@ describe("#start and stop times", () => {
     );
   });
   it("limits creation of messages to before the designated end time", () => {
-    let Gdax = new ApiSim();
-    let m = Gdax.createMatchesFromCandle(day, "0000", "2000");
+    let m = createMatchesFromCandle(day, "0000", "2000");
     assert.strictEqual(
       new Date(m[m.length - 1].time).getUTCHours(),
       19,
