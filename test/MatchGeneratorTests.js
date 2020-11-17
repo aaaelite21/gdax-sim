@@ -111,7 +111,7 @@ describe("#MatchGenerators", () => {
         "BTC-USD",
         true,
       );
-      assert.strictEqual(matches.length, 380); //matches + heartbeat
+      assert.strictEqual(matches.length, 384); //matches + heartbeat
     });
   });
 });

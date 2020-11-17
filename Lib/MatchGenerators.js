@@ -96,7 +96,10 @@ function createMatchesFromCandle(
       lastTime = candleTime.getTime();
       let bucket = getBucket(candleTime);
       if (lastBucket < 0) lastBucket = bucket;
-      if (reduce_signals && bucket !== lastBucket) {
+      if (
+        (reduce_signals && bucket !== lastBucket) ||
+        (reduce_signals && c === candleCount - 2)
+      ) {
         tmp.time.setMinutes(bucket * 15);
         messages = messages.concat(breakCandleIntoMatches(tmp, pair));
         lastBucket = bucket;
