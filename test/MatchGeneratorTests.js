@@ -1,4 +1,5 @@
 const assert = require("assert");
+const TestData = require("gdax-sim-test-data");
 const {
   createMatch,
   createMatchesFromCandle,
@@ -19,17 +20,15 @@ const testCandleLowToHigh = {
   close: 29.26,
   volume: 41.767021490000005,
 };
+const testCandleLowToHighLate = {
+  time: "Tue Nov 27 2018 03:53:00 GMT-0500 (Eastern Standard Time)",
+  open: 29.25,
+  high: 29.38,
+  low: 29.24,
+  close: 29.26,
+  volume: 41.767021490000005,
+};
 const twoCandleArray = [testCandleHighToLow, testCandleLowToHigh];
-const buyParams = {
-  price: 25.0,
-  size: 0.1,
-  product_id: "LTC-USD",
-};
-const sellParams = {
-  price: 38.0,
-  size: 0.1,
-  product_id: "LTC-USD",
-};
 const matchTemplate = {
   side: "buy",
   price: 32,
@@ -103,6 +102,16 @@ describe("#MatchGenerators", () => {
     it("can take an array of candles and generate matches based off of them", () => {
       let matches = createMatchesFromCandle(twoCandleArray);
       assert.strictEqual(matches.length, 8);
+    });
+    it("limits the number of messages based on the scaling", () => {
+      let matches = createMatchesFromCandle(
+        TestData.candles.threeDaysAsArray[0],
+        "0000",
+        "2460",
+        "BTC-USD",
+        true,
+      );
+      assert.strictEqual(matches.length, 380); //matches + heartbeat
     });
   });
 });

@@ -2,6 +2,21 @@ const crypto = require("crypto");
 const Parse24Time = require("../Lib/Parse24Time");
 const Heartbeat = require("./Heartbeat");
 
+function createTempCandle() {
+  return {
+    time: null,
+    open: null,
+    high: -Infinity,
+    low: Infinity,
+    close: null,
+    volume: 0,
+  };
+}
+
+function getBucket(time) {
+  return Math.floor(time.getMinutes() / 15);
+}
+
 function createMatch(templateObj) {
   return {
     type: "match",
@@ -32,9 +47,13 @@ function createMatch(templateObj) {
   };
 }
 
-function createMatchesFromCandle(candlesArrayOrObj, _start_time, _end_time) {
-  let start_time = _start_time === undefined ? "0000" : _start_time;
-  let end_time = _end_time === undefined ? "2460" : _end_time;
+function createMatchesFromCandle(
+  candlesArrayOrObj,
+  start_time = "0000",
+  end_time = "2460",
+  pair = "BTC-USD",
+  reduce_signals = false,
+) {
   let messages = [];
   let candles =
     candlesArrayOrObj.length === undefined
@@ -42,11 +61,12 @@ function createMatchesFromCandle(candlesArrayOrObj, _start_time, _end_time) {
       : candlesArrayOrObj;
   let candleCount = candles.length;
   let lastTime = null;
-
   let start = Parse24Time(start_time);
   let end = Parse24Time(end_time);
   let afterStart = false;
   let afterEnd = false;
+  let tmp = createTempCandle();
+  let lastBucket = -1;
 
   for (let c = 0; c < candleCount; c++) {
     let candle = candles[c];
@@ -67,66 +87,84 @@ function createMatchesFromCandle(candlesArrayOrObj, _start_time, _end_time) {
     }
     if (afterStart && !afterEnd) {
       if (lastTime !== null) {
-        while (lastTime + 60000 < candleTime.getTime()) {
+        while (lastTime + 60000 < candleTime.getTime() && !reduce_signals) {
           lastTime += 60000;
-          messages.push(Heartbeat.create(this.pair, lastTime));
+          messages.push(Heartbeat.create(pair, lastTime));
         }
       }
 
       lastTime = candleTime.getTime();
+      let bucket = getBucket(candleTime);
+      if (lastBucket < 0) lastBucket = bucket;
+      if (reduce_signals && bucket !== lastBucket) {
+        tmp.time.setMinutes(bucket * 15);
+        messages = messages.concat(breakCandleIntoMatches(tmp, pair));
+        lastBucket = bucket;
+        tmp = createTempCandle();
+      }
 
-      for (let i = 0; i < 4; i++) {
-        let key;
-        switch (i) {
-          case 0:
-            key = "open";
-            break;
-          case 1:
-            if (candle.close < candle.open) {
-              key = "high";
-            } else {
-              key = "low";
-            }
-            break;
-          case 2:
-            if (candle.close < candle.open) {
-              key = "low";
-            } else {
-              key = "high";
-            }
-            break;
-          case 3:
-            key = "close";
-            break;
-        }
+      //handle tmp candle
+      tmp.time = tmp.time || candleTime;
+      tmp.open = tmp.open || candle.open;
+      tmp.high = candle.high > tmp.high ? candle.high : tmp.high;
+      tmp.low = candle.low < tmp.low ? candle.low : tmp.low;
+      tmp.close = candle.close;
+      tmp.volume += candle.volume;
 
-        //ToDo: base side off of the direction of price movemnet
-        let side = Math.random() > 0.5 ? "buy" : "sell";
-
-        if (messages.length > 0) {
-          let lastPrice = parseFloat(messages[messages.length - 1].price);
-          if (candle[key] > lastPrice) {
-            side = "buy";
-          } else if (candle[key] < lastPrice) {
-            side = "sell";
-          }
-        }
-
-        messages.push(
-          createMatch({
-            side: side,
-            size: candle.volume / 4,
-            time: candleTime.toISOString(),
-            product_id: this.pair,
-            price: candle[key],
-          }),
-        );
-
-        candleTime.setSeconds(candleTime.getSeconds() + 14);
+      if (!reduce_signals) {
+        messages = messages.concat(breakCandleIntoMatches(tmp, pair));
+        tmp = createTempCandle();
       }
     }
   }
+  return messages;
+}
 
+function breakCandleIntoMatches(tmp, pair) {
+  let lastPrice = 0;
+  let messages = [];
+  for (let i = 0; i < 4; i++) {
+    let key;
+    switch (i) {
+      case 0:
+        key = "open";
+        break;
+      case 1:
+        if (tmp.close < tmp.open) {
+          key = "high";
+        } else {
+          key = "low";
+        }
+        break;
+      case 2:
+        if (tmp.close < tmp.open) {
+          key = "low";
+        } else {
+          key = "high";
+        }
+        break;
+      case 3:
+        key = "close";
+        break;
+    }
+
+    let side = "buy";
+    if (tmp[key] < lastPrice) {
+      side = "sell";
+    }
+    lastPrice = tmp[key];
+
+    messages.push(
+      createMatch({
+        side: side,
+        size: tmp.volume / 4,
+        time: tmp.time.toISOString(),
+        product_id: pair,
+        price: tmp[key],
+      }),
+    );
+    tmp.time.setSeconds(tmp.time.getSeconds() + 14);
+  }
   return messages;
 }
 

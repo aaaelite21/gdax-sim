@@ -108,13 +108,12 @@ class ApiSim {
   }
 
   //Below are supporting functions
-  backtest(candleData, _options) {
-    let options = _options === undefined ? {} : _options;
-
+  backtest(candleData, options = {}) {
     let messages = createMatchesFromCandle(
       candleData,
       options.start_time,
       options.end_time,
+      this.pair,
     );
     messages.reverse();
     let nextPrice, nextTime;
