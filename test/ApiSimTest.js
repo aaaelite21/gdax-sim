@@ -32,13 +32,7 @@ const sellParams = {
   size: 0.1,
   product_id: "LTC-USD",
 };
-const matchTemplate = {
-  side: "buy",
-  price: 32,
-  size: 2,
-  time: new Date("Dec 1 2018").toISOString(),
-  product_id: "LTC-USD",
-};
+
 describe("#ApiSim", () => {
   describe("#init", () => {
     it("has a user account sim", () => {
@@ -47,7 +41,7 @@ describe("#ApiSim", () => {
     });
     it("has a current price that starts at 0", () => {
       let Gdax = new ApiSim();
-      assert.equal(Gdax.currentPrice, 0);
+      assert.strictEqual(Gdax.currentPrice, 0);
     });
     it("has a websocketsim", () => {
       let Gdax = new ApiSim();
@@ -67,7 +61,7 @@ describe("#ApiSim", () => {
       let target = Gdax.user.cryptoBalance + buyParams.size;
       Gdax.buy(buyParams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(Gdax.user.cryptoBalance, target);
+        assert.strictEqual(Gdax.user.cryptoBalance, target);
       });
     });
     it("adds the size * price of a sell order to the fiat account if 100% filled", () => {
@@ -76,7 +70,7 @@ describe("#ApiSim", () => {
       let target = Gdax.user.fiatBalance + sellParams.size * sellParams.price;
       Gdax.sell(sellParams, (err, res, data) => {
         Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(Gdax.user.fiatBalance, target);
+        assert.strictEqual(Gdax.user.fiatBalance, target);
       });
     });
     it("returns an array of messages to disbatch", () => {
@@ -84,7 +78,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams, (err, res, data) => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(ret.length, 2);
+        assert.strictEqual(ret.length, 2);
       });
     });
     it("returns the match first", () => {
@@ -92,7 +86,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams, (err, res, data) => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(ret[0].type, "match");
+        assert.strictEqual(ret[0].type, "match");
       });
     });
     it("returns the 'done' last", () => {
@@ -100,7 +94,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams, (err, res, data) => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
-        assert.equal(ret[ret.length - 1].type, "done");
+        assert.strictEqual(ret[ret.length - 1].type, "done");
       });
     });
     it("the returned 'done' has the proper data", () => {
@@ -109,9 +103,9 @@ describe("#ApiSim", () => {
       Gdax.buy(buyParams, (err, res, data) => {
         let ret = Gdax.fillOrder(data.id, data.size, time);
         let done = ret[ret.length - 1];
-        assert.equal(done.order_id, data.id);
-        assert.equal(done.price, data.price);
-        assert.equal(done.side, data.side);
+        assert.strictEqual(done.order_id, data.id);
+        assert.strictEqual(done.price, data.price);
+        assert.strictEqual(done.side, data.side);
       });
     });
     /*it('fill message is only done if the order\'s volume is completle satisfied', () => {
@@ -139,7 +133,7 @@ describe("#ApiSim", () => {
         });
         Gdax.websocketClient.on("message", (message) => {
           if (count === 4) {
-            assert.equal(
+            assert.strictEqual(
               Gdax.user.limitOrders.openBuys
                 .map((x) => x.status)
                 .indexOf("pending"),
@@ -165,7 +159,7 @@ describe("#ApiSim", () => {
         Gdax.websocketClient.on("message", (message) => {
           if (count === 2) {
             placeOrder();
-            assert.equal(
+            assert.strictEqual(
               Gdax.user.limitOrders.openSells
                 .map((x) => x.status)
                 .indexOf("pending"),
@@ -173,7 +167,7 @@ describe("#ApiSim", () => {
             );
           }
           if (count === 6) {
-            assert.equal(
+            assert.strictEqual(
               Gdax.user.limitOrders.openSells
                 .map((x) => x.status)
                 .indexOf("pending"),
@@ -201,7 +195,7 @@ describe("#ApiSim", () => {
         );
         Gdax.websocketClient.on("message", (message) => {
           if (count === 4) {
-            assert.equal(message.maker_order_id, order.id);
+            assert.strictEqual(message.maker_order_id, order.id);
           }
           count++;
         });
@@ -224,8 +218,8 @@ describe("#ApiSim", () => {
         );
         Gdax.websocketClient.on("message", (message) => {
           if (count === 5) {
-            assert.equal(message.type, "done");
-            assert.equal(message.order_id, order.id);
+            assert.strictEqual(message.type, "done");
+            assert.strictEqual(message.order_id, order.id);
           }
           count++;
         });
@@ -253,7 +247,7 @@ describe("#ApiSim", () => {
             placeOrder();
           }
           if (count === 6) {
-            assert.equal(message.maker_order_id, order.id);
+            assert.strictEqual(message.maker_order_id, order.id);
           }
           count++;
         });
@@ -281,8 +275,8 @@ describe("#ApiSim", () => {
             placeOrder();
           }
           if (count === 7) {
-            assert.equal(message.type, "done");
-            assert.equal(message.order_id, order.id);
+            assert.strictEqual(message.type, "done");
+            assert.strictEqual(message.order_id, order.id);
           }
           count++;
         });
@@ -296,7 +290,7 @@ describe("#ApiSim", () => {
         count++;
       });
       Gdax.backtest(twoCandleArray);
-      assert.equal(count, 8);
+      assert.strictEqual(count, 8);
     });
     it("disbatches all matches to the websocket from oldest to most recent", () => {
       let Gdax = new ApiSim();
@@ -329,87 +323,9 @@ describe("#ApiSim", () => {
     it("sets the current price to that of the most recent match", () => {
       let Gdax = new ApiSim();
       Gdax.websocketClient.on("message", (data) => {
-        assert.equal(Gdax.currentPrice, parseFloat(data.price));
+        assert.strictEqual(Gdax.currentPrice, parseFloat(data.price));
       });
       Gdax.backtest(twoCandleArray);
-    });
-  });
-
-  describe("#createMatchesFromCandle", () => {
-    it("returns a minimum of 4 matches", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
-      assert.equal(matches.length, 4);
-    });
-    it("returns high before low if the close <= open", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
-      assert(parseFloat(matches[1].price) >= parseFloat(matches[2].price));
-    });
-    it("returns low before high if the close > open", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
-      assert(parseFloat(matches[1].price) <= parseFloat(matches[2].price));
-    });
-    it("increases the seconds from each match by 14", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleLowToHigh);
-      for (let i = 1; i < matches.length; i++) {
-        let date = new Date(matches[i].time);
-        let datePrime = new Date(matches[i - 1].time);
-        assert.equal(date.getSeconds() - datePrime.getSeconds(), 14);
-      }
-    });
-    it("changes the side to 'sell' if the price is going down from the last match", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
-      assert.equal(matches[2].side, "sell");
-    });
-    it("changes the side to 'buy' if the price is going up from the last match", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(testCandleHighToLow);
-      assert.equal(matches[1].side, "buy");
-      assert.equal(matches[3].side, "buy");
-    });
-    it("can take an array of candles and generate matches based off of them", () => {
-      let Gdax = new ApiSim();
-      let matches = Gdax.createMatchesFromCandle(twoCandleArray);
-      assert.equal(matches.length, 8);
-    });
-  });
-
-  describe("#createMatch", () => {
-    it("returns a match with the specafied paramaeters", () => {
-      let Gdax = new ApiSim();
-      let match = Gdax.createMatch(matchTemplate);
-      assert.equal(match.side, matchTemplate.side);
-      assert.equal(match.size, matchTemplate.size.toString());
-      assert.equal(match.price, matchTemplate.price.toString());
-      assert.equal(match.time, matchTemplate.time);
-      assert.equal(match.product_id, matchTemplate.product_id);
-    });
-    it("returns a that generates unspecafied parameters", () => {
-      let Gdax = new ApiSim();
-      let match = Gdax.createMatch(matchTemplate);
-      assert(match.type === "match");
-      assert(typeof match.trade_id === "number");
-      assert(typeof match.sequence === "number");
-      assert(typeof match.maker_order_id === "string");
-      assert(typeof match.taker_order_id === "string");
-    });
-    it("returns the desired maker order id if specafied", () => {
-      let Gdax = new ApiSim();
-      let x = JSON.parse(JSON.stringify(matchTemplate));
-      x.maker_order_id = "abc123";
-      let match = Gdax.createMatch(x);
-      assert.equal(match.maker_order_id, "abc123");
-    });
-    it("returns the desired taker order id if specafied", () => {
-      let Gdax = new ApiSim();
-      let x = JSON.parse(JSON.stringify(matchTemplate));
-      x.taker_order_id = "abc123";
-      let match = Gdax.createMatch(x);
-      assert.equal(match.taker_order_id, "abc123");
     });
   });
 
@@ -428,7 +344,7 @@ describe("#ApiSim", () => {
       Gdax.buy(buyParams, (err, res, d) => {
         orderId = d.id;
         Gdax.cancelOrder(orderId, (err, res, data) => {
-          assert.equal(data, orderId);
+          assert.strictEqual(data, orderId);
         });
       });
     });
@@ -436,14 +352,14 @@ describe("#ApiSim", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams, (err, res, d) => {
-        assert.equal(
+        assert.strictEqual(
           Gdax.user.limitOrders.openBuys
             .map((x) => x.status)
             .indexOf("pending"),
           0,
         );
         Gdax.cancelOrder(d.id, (err, res, data) => {
-          assert.equal(Gdax.user.limitOrders.openBuys.length, 0);
+          assert.strictEqual(Gdax.user.limitOrders.openBuys.length, 0);
         });
       });
     });
@@ -451,9 +367,9 @@ describe("#ApiSim", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
       Gdax.sell(sellParams, (err, res, d) => {
-        assert.equal(Gdax.user.limitOrders.openSells.length, 1);
+        assert.strictEqual(Gdax.user.limitOrders.openSells.length, 1);
         Gdax.cancelOrder(d.id, (err, res, data) => {
-          assert.equal(
+          assert.strictEqual(
             Gdax.user.limitOrders.openSells
               .map((x) => x.status)
               .indexOf("pending"),
@@ -472,7 +388,7 @@ describe("#ApiSim", () => {
           "without a balance change this test is invalid",
         );
         Gdax.cancelOrder(d.id, (err, res, data) => {
-          assert.equal(Gdax.user.fiatBalance, start);
+          assert.strictEqual(Gdax.user.fiatBalance, start);
         });
       });
     });
@@ -486,7 +402,7 @@ describe("#ApiSim", () => {
           "without a balance change this test is invalid",
         );
         Gdax.cancelOrder(d.id, (err, res, data) => {
-          assert.equal(Gdax.user.cryptoBalance, start);
+          assert.strictEqual(Gdax.user.cryptoBalance, start);
         });
       });
     });
@@ -500,7 +416,7 @@ describe("#ApiSim", () => {
       };
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams);
-      assert.deepEqual(Gdax.user.limitOrders.openBuys[0], {
+      assert.deepStrictEqual(Gdax.user.limitOrders.openBuys[0], {
         id: crypto
           .createHash("sha1")
           .update(JSON.stringify(buyParams) + "x")
@@ -533,7 +449,7 @@ describe("#ApiSim", () => {
       };
       Gdax.currentPrice = 35;
       Gdax.buy(buyParams, function (err, res, data) {
-        assert.deepEqual(data, {
+        assert.deepStrictEqual(data, {
           id: crypto
             .createHash("sha1")
             .update(JSON.stringify(buyParams) + "x")
@@ -559,7 +475,7 @@ describe("#ApiSim", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 12;
       Gdax.buy(buyParams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
     it("rejects the order if the user does not have enough fiat", () => {
@@ -567,7 +483,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       Gdax.user.fiatBalance = 0;
       Gdax.buy(buyParams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
     it("deducts the value of the order (size * price) from the fiat balance", () => {
@@ -576,7 +492,7 @@ describe("#ApiSim", () => {
       let targetValue =
         Gdax.user.fiatBalance - buyParams.size * buyParams.price;
       Gdax.buy(buyParams, () => {
-        assert.equal(Gdax.user.fiatBalance, targetValue);
+        assert.strictEqual(Gdax.user.fiatBalance, targetValue);
       });
     });
   });
@@ -588,7 +504,7 @@ describe("#ApiSim", () => {
       };
       Gdax.currentPrice = 35;
       Gdax.sell(sellParams);
-      assert.deepEqual(Gdax.user.limitOrders.openSells[0], {
+      assert.deepStrictEqual(Gdax.user.limitOrders.openSells[0], {
         id: crypto
           .createHash("sha1")
           .update(JSON.stringify(sellParams) + "x")
@@ -621,7 +537,7 @@ describe("#ApiSim", () => {
       };
       Gdax.currentPrice = 35;
       Gdax.sell(sellParams, function (err, res, data) {
-        assert.deepEqual(data, {
+        assert.deepStrictEqual(data, {
           id: crypto
             .createHash("sha1")
             .update(JSON.stringify(sellParams) + "x")
@@ -647,7 +563,7 @@ describe("#ApiSim", () => {
       let Gdax = new ApiSim(1000, 1000);
       Gdax.currentPrice = 40;
       Gdax.sell(sellParams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
     it("rejects the order if the user does not have enough crypto", () => {
@@ -655,7 +571,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       Gdax.user.cryptoBalance = 0;
       Gdax.sell(sellParams, (err, res, data) => {
-        assert.equal(data.status, "rejected");
+        assert.strictEqual(data.status, "rejected");
       });
     });
     it("deducts the value of the order (size * price) from the crypto balance", () => {
@@ -663,7 +579,7 @@ describe("#ApiSim", () => {
       Gdax.currentPrice = 35;
       let targetValue = Gdax.user.cryptoBalance - sellParams.size;
       Gdax.sell(sellParams, (err, res, data) => {
-        assert.equal(Gdax.user.cryptoBalance, targetValue);
+        assert.strictEqual(Gdax.user.cryptoBalance, targetValue);
       });
     });
   });

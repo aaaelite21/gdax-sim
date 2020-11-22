@@ -1,5 +1,5 @@
 class Candle {
-  constructor(time, granularity, offset) {
+  constructor(time, granularity, hours_start_on) {
     let now = new Date(time);
     let coeff = 1000 * granularity;
     this.open = undefined;
@@ -8,20 +8,20 @@ class Candle {
     this.low = undefined;
     this.volume = 0;
     this.granularity = granularity;
-    this.offset =
-      this.granularity === 3600
-        ? offset === 0
-          ? offset
-          : (60 - offset) * 60000
-        : 0;
-    this.time =
-      new Date(Math.floor(now.getTime() / coeff) * coeff).getTime() -
-      this.offset;
+    this.offset = this.granularity === 3600 ? hours_start_on * 60000 : 0;
+    this.time = this.calculateDate(now, coeff, this.offset);
   }
+
+  calculateDate(now, coeff, offset) {
+    return new Date(
+      Math.floor((now.getTime() - offset) / coeff) * coeff + offset,
+    ).getTime();
+  }
+
   process(price, size) {
     let p = parseFloat(price);
     let v = parseFloat(size);
-    this.open = this.open === undefined ? p : this.open;
+    this.open = this.open || p;
     this.close = p;
     this.high = this.high === undefined ? p : p > this.high ? p : this.high;
     this.low = this.low === undefined ? p : p < this.low ? p : this.low;
@@ -31,11 +31,7 @@ class Candle {
   sameBucket(t) {
     let now = new Date(t);
     let coeff = this.granularity * 1000;
-    return (
-      this.time ===
-      new Date(Math.floor(now.getTime() / coeff) * coeff).getTime() -
-        this.offset
-    );
+    return this.time === this.calculateDate(now, coeff, this.offset);
   }
 
   toArray() {
@@ -107,7 +103,8 @@ module.exports = {
       start =
         params.start !== undefined
           ? new Date(params.start).getTime() / 1000
-          : undefined;
+          : undefined,
+      limit = params.limit || 0;
     switch (params.granularity) {
       case 60:
         section = this.historics.m1.slice().reverse();
@@ -142,6 +139,8 @@ module.exports = {
         if (a[0] >= start && a[0] <= end) {
           data.push(a);
         }
+      } else if (end !== undefined && limit > 0) {
+        if (a[0] <= end && data.length < limit) data.push(a);
       } else {
         data.push(a);
       }
