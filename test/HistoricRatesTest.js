@@ -1,6 +1,7 @@
 const ApiSim = require("../Lib/ApiSim");
 const TestData = require("gdax-sim-test-data");
 const assert = require("assert");
+const { chdir } = require("process");
 
 describe("#Historic Rates", () => {
   describe("#ApiSetup", () => {
@@ -288,6 +289,24 @@ describe("#Historic Rates", () => {
         );
       }
     });
+    it("collects all of the data for the specific time from m15-1d when reduce signals is used", () => {
+      let Gdax = new ApiSim();
+      Gdax.backtest(TestData.candles.threeDaysContinuous, {
+        reduceSignals: true,
+      });
+      assert.strictEqual(Gdax.historics.m15.length, 288);
+      assert.strictEqual(Gdax.historics.h1.length, 72);
+      assert.strictEqual(Gdax.historics.h6.length, 12);
+      assert.strictEqual(Gdax.historics.d1.length, 3);
+    });
+    it("has a first candle is midnight with the turbo mode on", () => {
+      let Gdax = new ApiSim();
+      Gdax.backtest(TestData.candles.threeDaysAsArray[0], {
+        reduceSignals: true,
+      });
+      let d = new Date(Gdax.historics.m15[0].time);
+      assert.strictEqual(d.getMinutes(), 0);
+    });
   });
   describe("#Start and End parameters", () => {
     it("the most recent candle does not exceed the end param", () => {
@@ -352,14 +371,13 @@ describe("#Historic Rates", () => {
       );
     });
   });
-
   describe("#Offset Hours for stock market", () => {
     it("has all of its hourly (granularity 3600) candles start on a half hour mark when 30 is used", () => {
       let Gdax = new ApiSim({ hour_start_on: 30 });
       Gdax.backtest(TestData.candles.threeDaysAsArray[0]);
       assert.strictEqual(
         Gdax.historics.h1.length,
-        24,
+        25,
         "number of candles is wrong",
       );
       assert.strictEqual(
@@ -378,7 +396,7 @@ describe("#Historic Rates", () => {
       Gdax.backtest(TestData.candles.threeDaysAsArray[0]);
       assert.strictEqual(
         Gdax.historics.h1.length,
-        24,
+        25,
         "number of candles is wrong",
       );
       assert.strictEqual(
@@ -435,6 +453,80 @@ describe("#Historic Rates", () => {
             new Date(data[0][0] * 1000).toISOString(),
             "2016-01-01T04:30:00.000Z",
             "not the right starting hour",
+          );
+        },
+      );
+    });
+    it("does not fill candles with blank spaces when there is a gap in open/close data", () => {
+      let Gdax = new ApiSim();
+      Gdax.backtest(
+        [
+          {
+            time: "Wed, 22 Jul 2015 19:57:00 GMT",
+            open: 125.12,
+            high: 125.12,
+            low: 125.08,
+            close: 125.09,
+            volume: 9389,
+          },
+          {
+            time: "Thu, 23 Jul 2015 13:33:00 GMT",
+            open: 222.12,
+            high: 256.12,
+            low: 211.08,
+            close: 223.09,
+            volume: 9389,
+          },
+        ],
+        {
+          start_time: "1330",
+          end_time: "2000",
+        },
+      );
+      assert.strictEqual(
+        Gdax.historics.h1.length,
+        2,
+        "number of candles is wrong",
+      );
+    });
+  });
+  describe("getting data using limit functionality", () => {
+    it("has a time no latter then the end time", () => {
+      let testTime = new Date("Sun, 03 Jan 2016 15:30:00 GMT");
+      let Gdax = new ApiSim({ hour_start_on: 30 });
+      Gdax.backtest(TestData.candles.threeDaysContinuous);
+      Gdax.getProductHistoricRates(
+        "ETH-BTC",
+        {
+          limit: 10,
+          granularity: 3600,
+          end: testTime.toISOString(),
+        },
+        (err, res, data) => {
+          assert.strictEqual(
+            data[0][0],
+            testTime.getTime() / 1000,
+            "end not take into account properly",
+          );
+        },
+      );
+    });
+    it("only returns a number of candles equal to the limit", () => {
+      let testTime = new Date("Sun, 03 Jan 2016 15:30:00 GMT");
+      let Gdax = new ApiSim({ hour_start_on: 30 });
+      Gdax.backtest(TestData.candles.threeDaysContinuous);
+      Gdax.getProductHistoricRates(
+        "ETH-BTC",
+        {
+          limit: 10,
+          granularity: 3600,
+          end: testTime.toISOString(),
+        },
+        (err, res, data) => {
+          assert.strictEqual(
+            data.length,
+            10,
+            "limit not take into account properly",
           );
         },
       );

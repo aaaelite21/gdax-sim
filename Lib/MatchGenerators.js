@@ -13,8 +13,9 @@ function createTempCandle() {
   };
 }
 
-function getBucket(time) {
-  return Math.floor(time.getMinutes() / 15);
+function getBucket(_time) {
+  let bucket = Math.floor(_time.getMinutes() / 15);
+  return bucket;
 }
 
 function createMatch(templateObj) {
@@ -67,7 +68,6 @@ function createMatchesFromCandle(
   let afterEnd = false;
   let tmp = createTempCandle();
   let lastBucket = -1;
-
   for (let c = 0; c < candleCount; c++) {
     let candle = candles[c];
     let candleTime = new Date(candle.time);
@@ -96,11 +96,8 @@ function createMatchesFromCandle(
       lastTime = candleTime.getTime();
       let bucket = getBucket(candleTime);
       if (lastBucket < 0) lastBucket = bucket;
-      if (
-        (reduce_signals && bucket !== lastBucket) ||
-        (reduce_signals && c === candleCount - 2)
-      ) {
-        tmp.time.setMinutes(bucket * 15);
+      if (reduce_signals && bucket !== lastBucket) {
+        tmp.time.setMinutes(lastBucket * 15);
         messages = messages.concat(breakCandleIntoMatches(tmp, pair));
         lastBucket = bucket;
         tmp = createTempCandle();
@@ -112,9 +109,9 @@ function createMatchesFromCandle(
       tmp.high = candle.high > tmp.high ? candle.high : tmp.high;
       tmp.low = candle.low < tmp.low ? candle.low : tmp.low;
       tmp.close = candle.close;
-      tmp.volume += candle.volume;
+      tmp.volume += parseFloat(candle.volume);
 
-      if (!reduce_signals) {
+      if (!reduce_signals || (reduce_signals && c === candleCount - 1)) {
         messages = messages.concat(breakCandleIntoMatches(tmp, pair));
         tmp = createTempCandle();
       }

@@ -114,17 +114,13 @@ class ApiSim {
       options.start_time,
       options.end_time,
       this.pair,
+      options.reduceSignals,
     );
     messages.reverse();
     let nextPrice, nextTime;
     while (messages.length > 0) {
       let m = messages.pop();
-      if (m.price !== undefined) {
-        this.currentPrice = parseFloat(m.price);
-      }
-      if (m.time !== undefined) {
-        this.currentTime = m.time;
-      }
+
       //market orders
       if (this.user.orders.length >= 1) {
         let subArray = [];
@@ -141,7 +137,13 @@ class ApiSim {
           }
         }
       }
-
+      //update values
+      if (m.price !== undefined) {
+        this.currentPrice = parseFloat(m.price);
+      }
+      if (m.time !== undefined) {
+        this.currentTime = m.time;
+      }
       //limit orders below
       if (messages.length > 1) {
         let newmsg = [];
