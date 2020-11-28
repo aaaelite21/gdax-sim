@@ -43,7 +43,7 @@ class ApiSim {
   }
 
   completeOrder(order) {
-    CompleteOrder.call(this, order);
+    return CompleteOrder.call(this, order);
   }
 
   getOrder(orderId, callback) {
@@ -123,19 +123,15 @@ class ApiSim {
 
       //market orders
       if (this.user.orders.length >= 1) {
-        let subArray = [];
         this.user.orders.forEach((o) => {
           if (o.status === "pending") {
-            subArray.push(o.id);
+            let newmsg = this.fillOrder(o.id, null, this.currentTime);
+            o.status = "done";
+            for (let i = newmsg.length - 1; i >= 0; i--) {
+              messages.push(newmsg[i]);
+            }
           }
         });
-        for (let i = 0; i < subArray.length; i++) {
-          let moid = subArray[i];
-          let newmsg = this.fillOrder(moid, null, this.currentTime);
-          for (let i = newmsg.length - 1; i >= 0; i--) {
-            messages.push(newmsg[i]);
-          }
-        }
       }
       //update values
       if (m.price !== undefined) {
@@ -254,58 +250,68 @@ class ApiSim {
         time: time,
       });
     } else if (orderIndex !== -1) {
-      this.completeOrder(this.user.orders[orderIndex]);
-      order = this.user.orders[orderIndex];
-      if (order.side === "buy") {
-        let size = order.size === undefined ? order.filled_size : order.size;
-        let funds =
-          order.specified_funds !== undefined
-            ? parseFloat(order.specified_funds)
-            : parseFloat(order.size) * this.currentPrice * (1 + this.taker_fee);
-        this.user.cryptoBalance += parseFloat(size);
-        this.user.fiatBalance -= funds;
-        //no size on markt buys with funds until they are completed
-      } else if (order.side === "sell") {
-        let funds =
-          order.size === undefined
-            ? parseFloat(order.funds)
-            : parseFloat(order.size) * this.currentPrice * (1 - this.taker_fee);
-        this.user.fiatBalance += funds;
-      }
-      messages.push(
-        createMatch({
+      if (this.user.orders[orderIndex].status !== "done") {
+        this.user.orders[orderIndex] = this.completeOrder(
+          this.user.orders[orderIndex],
+        );
+
+        order = this.user.orders[orderIndex];
+        if (order.side === "buy") {
+          let size = order.size === undefined ? order.filled_size : order.size;
+          let funds =
+            order.specified_funds !== undefined
+              ? parseFloat(order.specified_funds)
+              : parseFloat(order.size) *
+                this.currentPrice *
+                (1 + this.taker_fee);
+          this.user.cryptoBalance += parseFloat(size);
+          this.user.fiatBalance -= funds;
+          //no size on markt buys with funds until they are completed
+        } else if (order.side === "sell") {
+          let funds =
+            order.size === undefined
+              ? parseFloat(order.funds)
+              : parseFloat(order.size) *
+                this.currentPrice *
+                (1 - this.taker_fee);
+          this.user.fiatBalance += funds;
+        }
+        messages.push(
+          createMatch({
+            side: order.side,
+            taker_order_id: order.id,
+            size: order.size !== undefined ? order.size : order.filled_size,
+            price: this.currentPrice,
+            product_id: order.product_id,
+            time: time,
+          }),
+        );
+        messages.push({
+          type: "done",
           side: order.side,
-          taker_order_id: order.id,
-          size: order.size !== undefined ? order.size : order.filled_size,
-          price: this.currentPrice,
+          order_id: order.id,
+          reason: "filled",
           product_id: order.product_id,
+          price: this.price,
+          remaining_size: "0.00000000",
+          sequence: Math.round(100000000 * Math.random()),
           time: time,
-        }),
-      );
-      messages.push({
-        type: "done",
-        side: order.side,
-        order_id: order.id,
-        reason: "filled",
-        product_id: order.product_id,
-        price: this.price,
-        remaining_size: "0.00000000",
-        sequence: Math.round(100000000 * Math.random()),
-        time: time,
-      });
+        });
+
+        if (messages[1].side === "buy")
+          this.eventDriver.onBuy(
+            this.user.fiatBalance,
+            this.user.cryptoBalance,
+            order,
+          );
+        else
+          this.eventDriver.onSell(
+            this.user.fiatBalance,
+            this.user.cryptoBalance,
+            order,
+          );
+      }
     }
-    if (messages[1].side === "buy")
-      this.eventDriver.onBuy(
-        this.user.fiatBalance,
-        this.user.cryptoBalance,
-        order,
-      );
-    else
-      this.eventDriver.onSell(
-        this.user.fiatBalance,
-        this.user.cryptoBalance,
-        order,
-      );
 
     return messages;
   }

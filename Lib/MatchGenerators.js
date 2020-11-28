@@ -97,14 +97,19 @@ function createMatchesFromCandle(
       let bucket = getBucket(candleTime);
       if (lastBucket < 0) lastBucket = bucket;
       if (reduce_signals && bucket !== lastBucket) {
-        tmp.time.setMinutes(lastBucket * 15);
+        tmp.time.setTime(
+          tmp.time.setTime(
+            tmp.time.getTime() -
+              60000 * (tmp.time.getMinutes() - lastBucket * 15),
+          ),
+        );
         messages = messages.concat(breakCandleIntoMatches(tmp, pair));
         lastBucket = bucket;
         tmp = createTempCandle();
       }
 
       //handle tmp candle
-      tmp.time = tmp.time || candleTime;
+      tmp.time = candleTime;
       tmp.open = tmp.open || candle.open;
       tmp.high = candle.high > tmp.high ? candle.high : tmp.high;
       tmp.low = candle.low < tmp.low ? candle.low : tmp.low;
@@ -117,6 +122,25 @@ function createMatchesFromCandle(
       }
     }
   }
+
+  //debug code
+  if (messages.length > 0) {
+    let d = new Date(messages[0].time);
+    if (
+      d.getUTCFullYear() === 2020 &&
+      d.getUTCMonth() === 10 &&
+      d.getUTCDate() === 1
+    ) {
+      messages.forEach((msg, i) => {
+        let m = new Date(msg.time);
+        if (m.getUTCHours() <= 6 && m.getUTCHours() >= 5) {
+          console.log("after matches are made", m.toISOString());
+        }
+      });
+    }
+  } else console.log(reduce_signals, candlesArrayOrObj);
+  //end
+
   return messages;
 }
 
@@ -163,7 +187,7 @@ function breakCandleIntoMatches(tmp, pair) {
         price: tmp[key],
       }),
     );
-    tmp.time.setSeconds(tmp.time.getSeconds() + 14);
+    tmp.time.setTime(tmp.time.getTime() + 14000);
   }
   return messages;
 }

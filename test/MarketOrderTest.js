@@ -188,7 +188,6 @@ describe("#ApiSim Market Orders", () => {
         assert.strictEqual(order.stp, undefined);
       });
     });
-
     it("adds the (size * price) - fee of a market sell order to the fiat account", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 2;
@@ -200,7 +199,6 @@ describe("#ApiSim Market Orders", () => {
         assert.strictEqual(Gdax.user.fiatBalance, target);
       });
     });
-
     it("adds the (size/price) of a market buy order to the crypto account", () => {
       let Gdax = new ApiSim(1000, 0);
       Gdax.currentPrice = 35;
@@ -210,7 +208,6 @@ describe("#ApiSim Market Orders", () => {
         assert.strictEqual(Gdax.user.cryptoBalance, target);
       });
     });
-
     it("subtracts the fee from the fiat account for a market buy", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
@@ -222,7 +219,6 @@ describe("#ApiSim Market Orders", () => {
         assert.strictEqual(Gdax.user.fiatBalance.toFixed(2), target.toFixed(2));
       });
     });
-
     it("sell: returns the match first", () => {
       let Gdax = new ApiSim();
       Gdax.currentPrice = 35;
@@ -277,6 +273,14 @@ describe("#ApiSim Market Orders", () => {
         let done = ret[ret.length - 1];
         assert.strictEqual(done.side, "buy");
         assert(done.order_id, data.id);
+      });
+    });
+    it("does nothing if the market order is allready completed", () => {
+      let Gdax = new ApiSim();
+      Gdax.buy(marketBuyPerams, (err, res, data) => {
+        Gdax.user.orders[0].status = "done";
+        let ret = Gdax.fillOrder(data.id, data.size, time);
+        assert.strictEqual(ret.length, 0);
       });
     });
   });

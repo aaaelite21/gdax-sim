@@ -28,7 +28,7 @@ describe("#Historic Rates", () => {
         done,
       );
     });
-    it("returns m1 when granularity = 60", () => {
+    it("returns an error when the granularity is not correct", () => {
       let Gdax = new ApiSim();
       Gdax.getProductHistoricRates(
         "ETH-BTC",
@@ -528,6 +528,39 @@ describe("#Historic Rates", () => {
             10,
             "limit not take into account properly",
           );
+        },
+      );
+    });
+  });
+
+  describe("data accuracy when using the turbo mode", () => {
+    it("maintains data intergaty for the hourly close", () => {
+      let Gdax = new ApiSim();
+      let og = [];
+      Gdax.backtest(TestData.candles.threeDaysContinuous);
+      Gdax.getProductHistoricRates(
+        "ETH-BTC",
+        {
+          granularity: 3600,
+        },
+        (err, res, data) => {
+          og = data.map((c) => c[4]);
+        },
+      );
+
+      Gdax = new ApiSim();
+      Gdax.backtest(TestData.candles.threeDaysContinuous, {
+        reduceSignals: true,
+      });
+      Gdax.getProductHistoricRates(
+        "ETH-BTC",
+        {
+          granularity: 3600,
+        },
+        (err, res, data) => {
+          data.forEach((elm, i) => {
+            assert.strictEqual(elm[4], og[i], "close is not correct");
+          });
         },
       );
     });
