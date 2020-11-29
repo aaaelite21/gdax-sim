@@ -93,54 +93,37 @@ function createMatchesFromCandle(
         }
       }
 
-      lastTime = candleTime.getTime();
-      let bucket = getBucket(candleTime);
-      if (lastBucket < 0) lastBucket = bucket;
-      if (reduce_signals && bucket !== lastBucket) {
-        tmp.time.setTime(
+      if (lastTime !== candleTime.getTime()) {
+        lastTime = candleTime.getTime();
+        let bucket = getBucket(candleTime);
+        if (lastBucket < 0) lastBucket = bucket;
+        if (reduce_signals && bucket !== lastBucket) {
           tmp.time.setTime(
-            tmp.time.getTime() -
-              60000 * (tmp.time.getMinutes() - lastBucket * 15),
-          ),
-        );
-        messages = messages.concat(breakCandleIntoMatches(tmp, pair));
-        lastBucket = bucket;
-        tmp = createTempCandle();
-      }
+            tmp.time.setTime(
+              tmp.time.getTime() -
+                60000 * (tmp.time.getMinutes() - lastBucket * 15),
+            ),
+          );
+          messages = messages.concat(breakCandleIntoMatches(tmp, pair));
+          lastBucket = bucket;
+          tmp = createTempCandle();
+        }
 
-      //handle tmp candle
-      tmp.time = candleTime;
-      tmp.open = tmp.open || candle.open;
-      tmp.high = candle.high > tmp.high ? candle.high : tmp.high;
-      tmp.low = candle.low < tmp.low ? candle.low : tmp.low;
-      tmp.close = candle.close;
-      tmp.volume += parseFloat(candle.volume);
+        //handle tmp candle
+        tmp.time = candleTime;
+        tmp.open = tmp.open || candle.open;
+        tmp.high = candle.high > tmp.high ? candle.high : tmp.high;
+        tmp.low = candle.low < tmp.low ? candle.low : tmp.low;
+        tmp.close = candle.close;
+        tmp.volume += parseFloat(candle.volume);
 
-      if (!reduce_signals || (reduce_signals && c === candleCount - 1)) {
-        messages = messages.concat(breakCandleIntoMatches(tmp, pair));
-        tmp = createTempCandle();
+        if (!reduce_signals || (reduce_signals && c === candleCount - 1)) {
+          messages = messages.concat(breakCandleIntoMatches(tmp, pair));
+          tmp = createTempCandle();
+        }
       }
     }
   }
-
-  //debug code
-  if (messages.length > 0) {
-    let d = new Date(messages[0].time);
-    if (
-      d.getUTCFullYear() === 2020 &&
-      d.getUTCMonth() === 10 &&
-      d.getUTCDate() === 1
-    ) {
-      messages.forEach((msg, i) => {
-        let m = new Date(msg.time);
-        if (m.getUTCHours() <= 6 && m.getUTCHours() >= 5) {
-          console.log("after matches are made", m.toISOString());
-        }
-      });
-    }
-  } else console.log(reduce_signals, candlesArrayOrObj);
-  //end
-
   return messages;
 }
 

@@ -10,7 +10,7 @@ const testCandleHighToLow = {
   high: 29.41,
   low: 29.28,
   close: 29.3,
-  volume: 58.25595405999999,
+  volume: 100,
 };
 const testCandleLowToHigh = {
   time: "Tue Nov 27 2018 03:45:00 GMT-0500 (Eastern Standard Time)",
@@ -112,6 +112,28 @@ describe("#MatchGenerators", () => {
         true,
       );
       assert.strictEqual(matches.length, 384); //matches + heartbeat
+    });
+    it("does not process duplicate candles", () => {
+      let matches = createMatchesFromCandle(
+        [testCandleHighToLow, testCandleHighToLow, testCandleLowToHigh],
+        "0000",
+        "2460",
+        "BTC-USD",
+        false,
+      );
+      assert.strictEqual(matches[0].size, testCandleHighToLow.volume / 4);
+      assert.strictEqual(matches.length, 8);
+    });
+    it("does not process duplicate candles w/ reduced signals", () => {
+      let matches = createMatchesFromCandle(
+        [testCandleHighToLow, testCandleHighToLow, testCandleLowToHigh],
+        "0000",
+        "2460",
+        "BTC-USD",
+        true,
+      );
+      assert.strictEqual(matches[0].size, testCandleHighToLow.volume / 4);
+      assert.strictEqual(matches.length, 8);
     });
   });
 });
