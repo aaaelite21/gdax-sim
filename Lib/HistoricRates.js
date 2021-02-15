@@ -18,14 +18,18 @@ class Candle {
     ).getTime();
   }
 
-  process(price, size) {
-    let p = parseFloat(price);
-    let v = parseFloat(size);
-    this.open = this.open || p;
-    this.close = p;
-    this.high = this.high === undefined ? p : p > this.high ? p : this.high;
-    this.low = this.low === undefined ? p : p < this.low ? p : this.low;
-    this.volume += v;
+  process(message) {
+    let { price, size, isUser } = message;
+
+    if (isUser === undefined) {
+      let p = parseFloat(price);
+      let v = parseFloat(size);
+      this.open = this.open || p;
+      this.close = p;
+      this.high = this.high === undefined ? p : p > this.high ? p : this.high;
+      this.low = this.low === undefined ? p : p < this.low ? p : this.low;
+      this.volume += v;
+    }
   }
 
   sameBucket(t) {
@@ -85,10 +89,7 @@ module.exports = {
               this.historics[key].shift();
             }
           }
-          this.historics[key][this.historics[key].length - 1].process(
-            message.price,
-            message.size,
-          );
+          this.historics[key][this.historics[key].length - 1].process(message);
         });
       }
     }

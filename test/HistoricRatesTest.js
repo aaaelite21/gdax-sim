@@ -1,7 +1,6 @@
 const ApiSim = require("../Lib/ApiSim");
 const TestData = require("gdax-sim-test-data");
 const assert = require("assert");
-const { chdir } = require("process");
 
 describe("#Historic Rates", () => {
   describe("#ApiSetup", () => {
@@ -532,7 +531,6 @@ describe("#Historic Rates", () => {
       );
     });
   });
-
   describe("data accuracy when using the turbo mode", () => {
     it("maintains data intergaty for the hourly close", () => {
       let Gdax = new ApiSim();

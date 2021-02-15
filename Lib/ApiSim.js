@@ -209,7 +209,7 @@ class ApiSim {
         return e.id;
       })
       .indexOf(orderId);
-    let orderIndex = this.user.orders
+    let marketOrderIndex = this.user.orders
       .map((e) => {
         return e.id;
       })
@@ -235,6 +235,7 @@ class ApiSim {
           price: order.price,
           product_id: order.product_id,
           time: time,
+          isUser: 1,
         }),
       );
 
@@ -248,14 +249,15 @@ class ApiSim {
         remaining_size: "0.00000000",
         sequence: Math.round(100000000 * Math.random()),
         time: time,
+        isUser: 1,
       });
-    } else if (orderIndex !== -1) {
-      if (this.user.orders[orderIndex].status !== "done") {
-        this.user.orders[orderIndex] = this.completeOrder(
-          this.user.orders[orderIndex],
+    } else if (marketOrderIndex !== -1) {
+      if (this.user.orders[marketOrderIndex].status !== "done") {
+        this.user.orders[marketOrderIndex] = this.completeOrder(
+          this.user.orders[marketOrderIndex],
         );
 
-        order = this.user.orders[orderIndex];
+        order = this.user.orders[marketOrderIndex];
         if (order.side === "buy") {
           let size = order.size === undefined ? order.filled_size : order.size;
           let funds =
@@ -284,6 +286,7 @@ class ApiSim {
             price: this.currentPrice,
             product_id: order.product_id,
             time: time,
+            isUser: 1,
           }),
         );
         messages.push({
@@ -296,6 +299,7 @@ class ApiSim {
           remaining_size: "0.00000000",
           sequence: Math.round(100000000 * Math.random()),
           time: time,
+          isUser: 1,
         });
 
         if (messages[1].side === "buy")
