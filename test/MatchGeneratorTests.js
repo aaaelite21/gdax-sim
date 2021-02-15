@@ -68,6 +68,12 @@ describe("#MatchGenerators", () => {
       let match = createMatch(x);
       assert.strictEqual(match.taker_order_id, "abc123");
     });
+    it("raises the isUSer flag if the setting exists in the options", () => {
+      let x = JSON.parse(JSON.stringify(matchTemplate));
+      x.isUser = "abc123";
+      let match = createMatch(x);
+      assert.strictEqual(match.isUser, 1);
+    });
   });
   describe("#createMatchesFromCandle", () => {
     it("returns a minimum of 4 matches", () => {

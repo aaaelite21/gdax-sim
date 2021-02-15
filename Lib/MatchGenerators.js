@@ -19,7 +19,7 @@ function getBucket(_time) {
 }
 
 function createMatch(templateObj) {
-  return {
+  let ret = {
     type: "match",
     side: templateObj.side,
     size:
@@ -46,6 +46,10 @@ function createMatch(templateObj) {
             .update(JSON.stringify(Math.random().toString()))
             .digest("hex"),
   };
+
+  if (templateObj.isUser) ret.isUser = 1;
+
+  return ret;
 }
 
 function createMatchesFromCandle(
@@ -164,7 +168,7 @@ function breakCandleIntoMatches(tmp, pair) {
     messages.push(
       createMatch({
         side: side,
-        size: tmp.volume / 4,
+        size: tmp.volume * 0.25,
         time: tmp.time.toISOString(),
         product_id: pair,
         price: tmp[key],
